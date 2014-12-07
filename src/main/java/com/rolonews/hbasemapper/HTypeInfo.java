@@ -11,6 +11,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ *
  * Created by Sleiman on 06/12/2014.
  *
  */
@@ -159,7 +160,7 @@ public final class HTypeInfo {
         return this.columns;
     }
 
-    public List<HValidate> getValidator(){
+    public List<HValidate> getValidators(){
         return this.validators;
     }
 }
