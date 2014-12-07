@@ -15,7 +15,7 @@
         <maven.compiler.target>1.6</maven.compiler.target>
         <junit.version>4.7</junit.version>
         <hbase.version>0.98.8-hadoop2</hbase.version>
-        <guava.version>18.0</guava.version>
+        <gson.version>2.3</gson.version>
     </properties>
 
     <dependencies>
@@ -31,18 +31,12 @@
             <groupId>org.apache.hbase</groupId>
             <artifactId>hbase-client</artifactId>
             <version>${hbase.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>${gson.version}</version>
         </dependency>
 
     </dependencies>

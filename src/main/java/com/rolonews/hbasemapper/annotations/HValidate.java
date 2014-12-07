@@ -4,6 +4,7 @@ import com.rolonews.hbasemapper.HEntityValidator;
 import java.lang.annotation.*;
 
 /**
+ *
  * Created by Sleiman on 06/12/2014.
  *
  */
