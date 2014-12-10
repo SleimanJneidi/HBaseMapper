@@ -1,5 +1,6 @@
 package com.rolonews.hbasemapper;
 
+import com.google.common.base.Function;
 import org.apache.hadoop.hbase.client.HConnection;
 
 import java.util.List;
@@ -27,7 +28,9 @@ public abstract class DataStore {
 
     public abstract void put(Object key,Object object);
 
-    public abstract <K,V> List<V> get(K key);
+    public abstract <K,T> void put(Function<T,K> rowKeyFunction, List<T> objects, Class<T> clazz);
+
+    public abstract <K,T> T get(K key);
 
     public abstract void delete(Object object);
 

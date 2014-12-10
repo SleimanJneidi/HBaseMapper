@@ -7,5 +7,5 @@ package com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler;
  */
 public interface ObjectSerializer {
     byte []serialize(Object object);
-    Object deserialize(byte[] buffer);
+    <T>  T deserialize(byte[] buffer, Class<T> clazz);
 }

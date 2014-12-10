@@ -46,8 +46,10 @@ public class BasicDataStore extends DataStore {
     public <T> void put(List<T> objects, Class<T> clazz) {
         Preconditions.checkNotNull(objects);
         Preconditions.checkArgument(objects.size()>=1);
+        Preconditions.checkNotNull(clazz);
+
         List<Put> puts = new ArrayList<Put>();
-        for(Object object: objects){
+        for(T object: objects){
             byte[]rowKey = rowKey(object);
             Put put = createPut(rowKey,object);
             puts.add(put);
@@ -60,13 +62,32 @@ public class BasicDataStore extends DataStore {
         Preconditions.checkNotNull(key);
         Preconditions.checkNotNull(object);
 
-        byte[]rowkey = serializer.serialize(key);
-        Put put = createPut(rowkey,object);
+        byte[]rowKey = serializer.serialize(key);
+        Put put = createPut(rowKey,object);
 
+        insert(Arrays.asList(put),object.getClass());
     }
 
     @Override
-    public <K, V> List<V> get(K key) {
+    public <K, T> void put(Function<T, K> rowKeyFunction, List<T> objects, Class<T> clazz) {
+        Preconditions.checkNotNull(objects);
+        Preconditions.checkArgument(objects.size()>=1);
+
+        Preconditions.checkNotNull(rowKeyFunction);
+        Preconditions.checkNotNull(clazz);
+
+
+        List<Put> puts = new ArrayList<Put>();
+        for(T object: objects){
+            byte[]rowKey = this.serializer.serialize(rowKeyFunction.apply(object));
+            Put put = createPut(rowKey,object);
+            puts.add(put);
+        }
+        insert(puts, clazz);
+    }
+
+    @Override
+    public <K, T> T get(K key) {
         return null;
     }
 

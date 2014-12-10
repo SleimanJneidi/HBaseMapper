@@ -49,7 +49,38 @@ public class BasicObjectSerializer implements ObjectSerializer{
     }
 
     @Override
-    public Object deserialize(byte[] buffer) {
-        return null;
+    public <T>  T deserialize(byte[] buffer,Class<T> clazz) {
+        Preconditions.checkNotNull(buffer);
+        Preconditions.checkNotNull(clazz);
+
+        String typeName = clazz.getName();
+
+        if ("java.lang.String".equals(typeName)) {
+            return (T)Bytes.toString(buffer);
+        }
+        if("java.lang.Integer".equals(typeName)){
+            return (T)Integer.valueOf(Bytes.toInt(buffer));
+        }
+        if ("java.lang.Double".equals(typeName)) {
+            return (T)Double.valueOf(Bytes.toDouble(buffer));
+        }
+        if("java.lang.short".equals(typeName)){
+            return (T)Short.valueOf(Bytes.toShort(buffer));
+        }
+        if("java.lang.boolean".equals(typeName)){
+            return (T)Boolean.valueOf(Bytes.toBoolean(buffer));
+        }
+        if("java.lang.Long".equals(typeName)){
+            return (T)Long.valueOf(Bytes.toLong(buffer));
+        }
+        if("java.math.BigDecimal".equals(typeName)){
+            return (T) Bytes.toBigDecimal(buffer);
+        }
+        if("java.nio.ByteBuffer".equals(typeName)){
+            return (T) ByteBuffer.wrap(buffer);
+        }
+        else{
+            throw new NotImplementedException("Can't serialize object of type "+typeName);
+        }
     }
 }
