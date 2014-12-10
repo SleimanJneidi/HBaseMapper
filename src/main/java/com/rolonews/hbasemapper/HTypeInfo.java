@@ -49,11 +49,7 @@ public final class HTypeInfo {
 
     private static HTypeInfo createHTypeInfo(Class<?> clazz) {
 
-        MTable tableAnnotation = clazz.getAnnotation(MTable.class);
-
-        if (tableAnnotation == null) {
-            throw new InvalidMappingException(clazz.getName() + " is not annotated by " + MTable.class.getName());
-        }
+        MTable tableAnnotation = getMTable(clazz);
 
         String[] rowKeys = tableAnnotation.rowKeys();
 
@@ -162,5 +158,21 @@ public final class HTypeInfo {
 
     public List<HValidate> getValidators(){
         return this.validators;
+    }
+
+    private static MTable getMTable(Class<?> clazz){
+        MTable tableAnnotation = clazz.getAnnotation(MTable.class);
+        if(tableAnnotation != null){
+            return tableAnnotation;
+        }
+        Class<?> parent = clazz.getSuperclass();
+        while (parent !=null && parent!= Object.class){
+            if(parent.getAnnotation(MTable.class)!=null){
+                return parent.getAnnotation(MTable.class);
+            }
+            parent = parent.getSuperclass();
+        }
+        throw new InvalidMappingException(clazz.getName() + " is not annotated by " + MTable.class.getName());
+
     }
 }
