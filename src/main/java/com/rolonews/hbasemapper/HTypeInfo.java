@@ -20,13 +20,13 @@ public final class HTypeInfo {
     private static final Logger LOG = LoggerFactory.getLogger(HTypeInfo.class);
     private static final Map<Class<?>, HTypeInfo> typeMap = new ConcurrentHashMap<Class<?>, HTypeInfo>();
 
-    private final Table table;
+    private final MTable table;
     private final Class<?> clazz;
     private final Map<String, Field> rowKeys;
-    private final Map<Column, Field> columns;
+    private final Map<MColumn, Field> columns;
     private final List<HValidate> validators;
 
-    private HTypeInfo(Class<?> clazz, Table table, Map<Column, Field> columns, Map<String, Field> rowKeys, List<HValidate> validators) {
+    private HTypeInfo(Class<?> clazz, MTable table, Map<MColumn, Field> columns, Map<String, Field> rowKeys, List<HValidate> validators) {
         this.clazz = clazz;
         this.table = table;
         this.columns = columns;
@@ -49,16 +49,16 @@ public final class HTypeInfo {
 
     private static HTypeInfo createHTypeInfo(Class<?> clazz) {
 
-        Table tableAnnotation = clazz.getAnnotation(Table.class);
+        MTable tableAnnotation = clazz.getAnnotation(MTable.class);
 
         if (tableAnnotation == null) {
-            throw new InvalidMappingException(clazz.getName() + " is not annotated by " + Table.class.getName());
+            throw new InvalidMappingException(clazz.getName() + " is not annotated by " + MTable.class.getName());
         }
 
         String[] rowKeys = tableAnnotation.rowKeys();
 
         List<Field> allFields = getDeclaredAndInheritedFields(clazz);
-        Map<Column, Field> columns = new HashMap<Column, Field>();
+        Map<MColumn, Field> columns = new HashMap<MColumn, Field>();
         Map<String, Field> rowKeysFields = new HashMap<String, Field>();
 
         Map<String, Field> map = Maps.uniqueIndex(allFields, new Function<Field, String>() {
@@ -80,7 +80,7 @@ public final class HTypeInfo {
         Set<String> families = new HashSet<String>(Arrays.asList(tableAnnotation.columnFamilies()));
 
         for (Field field : allFields) { // validate column  familes
-            Column column = field.getAnnotation(Column.class);
+            MColumn column = field.getAnnotation(MColumn.class);
             if (column != null) {
                 String family = column.family();
                 if (!families.contains(family)) {
@@ -144,7 +144,7 @@ public final class HTypeInfo {
         return typeMap.get(clazz);
     }
 
-    public Table getTable() {
+    public MTable getTable() {
         return this.table;
     }
 
@@ -156,7 +156,7 @@ public final class HTypeInfo {
         return this.rowKeys;
     }
 
-    public Map<Column, Field> getColumns() {
+    public Map<MColumn, Field> getColumns() {
         return this.columns;
     }
 

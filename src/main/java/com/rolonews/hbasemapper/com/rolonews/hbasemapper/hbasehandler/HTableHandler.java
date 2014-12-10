@@ -1,13 +1,12 @@
 package com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler;
 
 import com.rolonews.hbasemapper.HTypeInfo;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
-import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.hbase.client.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.concurrent.locks.Lock;
@@ -21,30 +20,32 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class HTableHandler {
 
+    private static final Logger LOG = LoggerFactory.getLogger(HTableHandler.class);
+
     private static final Lock lock = new ReentrantLock();
 
-    private final Configuration configuration;
+    private final HConnection connection;
 
-    public HTableHandler(final Configuration configuration){
-        this.configuration = configuration;
+    public HTableHandler(final HConnection connection){
+        this.connection = connection;
     }
 
-    public HTable getOrCreateHTable(HTypeInfo hTypeInfo){
-        String tableName = hTypeInfo.getTable().name();
-        byte[] tableNameBuffer = Bytes.toBytes(tableName);
-
+    public HTableInterface getOrCreateHTable(HTypeInfo hTypeInfo){
+        TableName tableName = TableName.valueOf(hTypeInfo.getTable().name());
         try {
             lock.lock();
-            HBaseAdmin admin = new HBaseAdmin(configuration);
-            if (!admin.isTableAvailable(tableNameBuffer)) {
-                HTableDescriptor tableDescriptor = new HTableDescriptor(TableName.valueOf(tableNameBuffer));
+            if (!connection.isTableAvailable(tableName)) {
+                HTableDescriptor tableDescriptor = new HTableDescriptor(tableName);
                 for (String family : hTypeInfo.getTable().columnFamilies()) {
                     tableDescriptor.addFamily(new HColumnDescriptor(family));
                 }
+
+                LOG.info(String.format("%s table does not exit, so we creating it",tableName.toString()));
+                HBaseAdmin admin = new HBaseAdmin(connection.getConfiguration());
                 admin.createTable(tableDescriptor);
             }
-            HTable hTable = new HTable(configuration, tableNameBuffer);
-            return hTable;
+            HTableInterface table = connection.getTable(tableName);
+            return table;
 
         }catch(IOException e){
             throw new RuntimeException(e);
@@ -53,7 +54,7 @@ public class HTableHandler {
         }
     }
 
-    public HTable getOrCreateHTable(Class<?> clazz){
+    public HTableInterface getOrCreateHTable(Class<?> clazz){
         HTypeInfo hTypeInfo = HTypeInfo.getOrRegisterHTypeInfo(clazz);
         return getOrCreateHTable(hTypeInfo);
     }

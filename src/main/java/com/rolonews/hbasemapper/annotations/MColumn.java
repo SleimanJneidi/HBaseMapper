@@ -9,7 +9,7 @@ import java.lang.annotation.*;
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Column {
+public @interface MColumn {
     String family();
     String qualifier();
 }
