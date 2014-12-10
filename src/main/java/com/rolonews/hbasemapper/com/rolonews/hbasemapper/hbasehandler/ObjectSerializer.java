@@ -2,6 +2,7 @@ package com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler;
 
 
 /**
+ *
  * Created by Sleiman on 09/12/2014.
  *
  */
