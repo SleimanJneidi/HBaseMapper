@@ -11,7 +11,7 @@ import java.util.List;
  */
 public abstract class DataStore {
 
-    private final HConnection connection;
+    protected final HConnection connection;
 
     protected DataStore(HConnection connection) {
         this.connection = connection;
@@ -23,9 +23,9 @@ public abstract class DataStore {
 
     public abstract void put(Object object);
 
-    public abstract void put(List<?> objects);
+    public abstract <T> void put(List<T> objects,Class<T> clazz);
 
-    public abstract <T>void put(T key,Object object);
+    public abstract void put(Object key,Object object);
 
     public abstract <K,V> List<V> get(K key);
 
