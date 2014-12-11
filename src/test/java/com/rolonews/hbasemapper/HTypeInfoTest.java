@@ -3,7 +3,7 @@ package com.rolonews.hbasemapper;
 import com.rolonews.hbasemapper.annotations.*;
 
 import com.rolonews.hbasemapper.exceptions.InvalidMappingException;
-import org.junit.Assert;
+import static org.junit.Assert.*;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
@@ -17,7 +17,7 @@ public class HTypeInfoTest extends BaseTest {
     @Test
     public void testCanRegisterValidType(){
         HTypeInfo hTypeInfo = HTypeInfo.register(Person.class);
-        Assert.assertNotNull(hTypeInfo);
+        assertNotNull(hTypeInfo);
     }
 
     @Test(expected = InvalidMappingException.class)
@@ -30,7 +30,7 @@ public class HTypeInfoTest extends BaseTest {
         HTypeInfo hTypeInfo = HTypeInfo.register(Student.class);
         String tableName = hTypeInfo.getTable().name();
 
-        Assert.assertEquals("Person",tableName);
+        assertEquals("Person", tableName);
     }
 
     @Test
@@ -47,10 +47,15 @@ public class HTypeInfoTest extends BaseTest {
             Class<? extends HEntityValidator<?>> entityValidator = validator.validator();
 
             HEntityValidator<Student> hEntityValidator = (HEntityValidator<Student>)entityValidator.newInstance();
-            Assert.assertTrue(hEntityValidator.isValid(student));
+            assertTrue(hEntityValidator.isValid(student));
         }
     }
 
+    @Test
+    public void testCanMapInheritedClass(){
+        HTypeInfo typeInfo = HTypeInfo.getOrRegisterHTypeInfo(SubInheritanceDummy.class);
+        assertEquals("BaseInheritanceDummy",typeInfo.getTable().name());
+    }
 
 }
 
@@ -95,6 +100,14 @@ class StudentValidator implements HEntityValidator<Student>{
 }
 @MTable(name = "InvalidName", rowKeys = "id",columnFamilies = "cf")
 class InvalidObject{
+
+}
+
+@MTable(name = "BaseInheritanceDummy",rowKeys = "id",columnFamilies = "details")
+class BaseInheritanceDummy{
+    private String id;
+}
+class SubInheritanceDummy extends BaseInheritanceDummy{
 
 }
 
