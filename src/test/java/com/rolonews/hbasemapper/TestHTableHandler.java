@@ -15,7 +15,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class TestHTableHandler {
+public class TestHTableHandler extends BaseTest{
 
     @Mock
     private HTableInterface table;
@@ -33,6 +33,8 @@ public class TestHTableHandler {
     @Test
     public void testInsertRecord() throws Exception {
 
+
+
         TableName tableName = TableName.valueOf("Person");
         when(connection.isTableAvailable(tableName)).thenReturn(true);
         when(connection.getTable(tableName)).thenReturn(table);
@@ -41,6 +43,7 @@ public class TestHTableHandler {
         HTableHandler tableHandler = new HTableHandler(connection);
         HTableInterface  hTableInterface =  tableHandler.getOrCreateHTable(Person.class);
         assertNotNull(hTableInterface);
+
 
     }
 }
