@@ -104,7 +104,7 @@ public class BasicDataStore extends DataStore {
     private byte[]rowKey(final Object object){
         byte[]rowKeyBuffer;
         try {
-            HTypeInfo typeInfo = HTypeInfo.getHTypeInfo(object.getClass());
+            HTypeInfo typeInfo = HTypeInfo.getOrRegisterHTypeInfo(object.getClass());
             if (typeInfo.getRowKeys().size() == 1) {
                 Field rowField = Iterables.getLast(typeInfo.getRowKeys().values());
                 rowField.setAccessible(true);
@@ -134,7 +134,7 @@ public class BasicDataStore extends DataStore {
     private Put createPut(final byte[] rowKey,final Object object){
         try {
             Put put = new Put(rowKey);
-            Map<MColumn, Field> columns = HTypeInfo.getHTypeInfo(object.getClass()).getColumns();
+            Map<MColumn, Field> columns = HTypeInfo.getOrRegisterHTypeInfo(object.getClass()).getColumns();
             for (Map.Entry<MColumn, Field> columnFieldEntry : columns.entrySet()) {
                 Field field = columnFieldEntry.getValue();
                 MColumn column = columnFieldEntry.getKey();
@@ -154,7 +154,7 @@ public class BasicDataStore extends DataStore {
     }
 
     private void insert(final List<Put> put,Class<?> clazz){
-        HTypeInfo typeInfo = HTypeInfo.getHTypeInfo(clazz);
+        HTypeInfo typeInfo = HTypeInfo.getOrRegisterHTypeInfo(clazz);
         HTableInterface table = null;
         try {
 
