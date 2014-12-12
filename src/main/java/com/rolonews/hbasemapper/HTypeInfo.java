@@ -20,13 +20,13 @@ public final class HTypeInfo {
     private static final Logger LOG = LoggerFactory.getLogger(HTypeInfo.class);
     private static final Map<Class<?>, HTypeInfo> typeMap = new ConcurrentHashMap<Class<?>, HTypeInfo>();
 
-    private final MTable table;
+    private final Table table;
     private final Class<?> clazz;
     private final Map<String, Field> rowKeys;
-    private final Map<MColumn, Field> columns;
+    private final Map<Column, Field> columns;
     private final List<HValidate> validators;
 
-    private HTypeInfo(Class<?> clazz, MTable table, Map<MColumn, Field> columns, Map<String, Field> rowKeys, List<HValidate> validators) {
+    private HTypeInfo(Class<?> clazz, Table table, Map<Column, Field> columns, Map<String, Field> rowKeys, List<HValidate> validators) {
         this.clazz = clazz;
         this.table = table;
         this.columns = columns;
@@ -49,15 +49,16 @@ public final class HTypeInfo {
 
     private static HTypeInfo createHTypeInfo(Class<?> clazz) {
 
-        MTable tableAnnotation = getMTable(clazz);
+        Table tableAnnotation = getMTable(clazz);
 
-        String[] rowKeys = tableAnnotation.rowKeys();
+        String[] rowKeys = tableAnnotation.rowKey();
 
         List<Field> allFields = getDeclaredAndInheritedFields(clazz);
-        Map<MColumn, Field> columns = new HashMap<MColumn, Field>();
+        Map<Column, Field> columns = new HashMap<Column, Field>();
         Map<String, Field> rowKeysFields = new HashMap<String, Field>();
 
         Map<String, Field> map = Maps.uniqueIndex(allFields, new Function<Field, String>() {
+
             @Override
             public String apply(Field field) {
                 return field.getName();
@@ -76,7 +77,7 @@ public final class HTypeInfo {
         Set<String> families = new HashSet<String>(Arrays.asList(tableAnnotation.columnFamilies()));
 
         for (Field field : allFields) { // validate column  familes
-            MColumn column = field.getAnnotation(MColumn.class);
+            Column column = field.getAnnotation(Column.class);
             if (column != null) {
                 String family = column.family();
                 if (!families.contains(family)) {
@@ -140,7 +141,7 @@ public final class HTypeInfo {
         return typeMap.get(clazz);
     }
 
-    public MTable getTable() {
+    public Table getTable() {
         return this.table;
     }
 
@@ -152,7 +153,7 @@ public final class HTypeInfo {
         return this.rowKeys;
     }
 
-    public Map<MColumn, Field> getColumns() {
+    public Map<Column, Field> getColumns() {
         return this.columns;
     }
 
@@ -160,19 +161,19 @@ public final class HTypeInfo {
         return this.validators;
     }
 
-    private static MTable getMTable(Class<?> clazz){
-        MTable tableAnnotation = clazz.getAnnotation(MTable.class);
+    private static Table getMTable(Class<?> clazz){
+        Table tableAnnotation = clazz.getAnnotation(Table.class);
         if(tableAnnotation != null){
             return tableAnnotation;
         }
         Class<?> parent = clazz.getSuperclass();
         while (parent !=null && parent!= Object.class){
-            if(parent.getAnnotation(MTable.class)!=null){
-                return parent.getAnnotation(MTable.class);
+            if(parent.getAnnotation(Table.class)!=null){
+                return parent.getAnnotation(Table.class);
             }
             parent = parent.getSuperclass();
         }
-        throw new InvalidMappingException(clazz.getName() + " is not annotated by " + MTable.class.getName());
+        throw new InvalidMappingException(clazz.getName() + " is not annotated by " + Table.class.getName());
 
     }
 }

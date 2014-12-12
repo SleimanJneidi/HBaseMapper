@@ -59,16 +59,16 @@ public class HTypeInfoTest extends BaseTest {
 
 }
 
-@MTable(name = "Person", rowKeys = {"id"}, columnFamilies = {"info"})
+@Table(name = "Person", rowKey = {"id"}, columnFamilies = {"info"})
 @HValidate(validator = PersonValidator.class)
 class Person {
 
     private String id;
 
-    @MColumn(family = "info", qualifier = "name")
+    @Column(family = "info", qualifier = "name")
     public String name;
 
-    @MColumn(family = "info", qualifier = "age")
+    @Column(family = "info", qualifier = "age")
     public int age;
 
 
@@ -98,12 +98,12 @@ class StudentValidator implements HEntityValidator<Student>{
     }
 
 }
-@MTable(name = "InvalidName", rowKeys = "id",columnFamilies = "cf")
+@Table(name = "InvalidName", rowKey = "id",columnFamilies = "cf")
 class InvalidObject{
 
 }
 
-@MTable(name = "BaseInheritanceDummy",rowKeys = "id",columnFamilies = "details")
+@Table(name = "BaseInheritanceDummy", rowKey = "id",columnFamilies = "details")
 class BaseInheritanceDummy{
     private String id;
 }

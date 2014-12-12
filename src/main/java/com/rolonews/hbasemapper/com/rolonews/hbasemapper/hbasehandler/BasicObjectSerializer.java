@@ -59,19 +59,19 @@ public class BasicObjectSerializer implements ObjectSerializer{
         if (String.class.getName().equals(typeName)) {
             return (T)Bytes.toString(buffer);
         }
-        if(Integer.class.getName().equals(typeName)){
+        if(Integer.class.getName().equals(typeName) || "int".equals(typeName)){
             return (T)Integer.valueOf(Bytes.toInt(buffer));
         }
-        if(Double.class.getName().equals(typeName)) {
+        if(Double.class.getName().equals(typeName) || "double".equals(typeName)) {
             return (T)Double.valueOf(Bytes.toDouble(buffer));
         }
-        if(Short.class.getName().equals(typeName)){
+        if(Short.class.getName().equals(typeName) || "short".equals(typeName)){
             return (T)Short.valueOf(Bytes.toShort(buffer));
         }
-        if(Boolean.class.getName().equals(typeName)){
+        if(Boolean.class.getName().equals(typeName) || "boolean".equals(typeName)){
             return (T)Boolean.valueOf(Bytes.toBoolean(buffer));
         }
-        if(Long.class.getName().equals(typeName)){
+        if(Long.class.getName().equals(typeName) || "long".equals(typeName)){
             return (T)Long.valueOf(Bytes.toLong(buffer));
         }
         if(BigDecimal.class.getName().equals(typeName)){

@@ -1,9 +1,8 @@
 package com.rolonews.hbasemapper;
 import com.google.common.base.Function;
-import com.google.common.reflect.Reflection;
 import com.rolonews.hbasemapper.annotations.HValidate;
-import com.rolonews.hbasemapper.annotations.MColumn;
-import com.rolonews.hbasemapper.annotations.MTable;
+import com.rolonews.hbasemapper.annotations.Column;
+import com.rolonews.hbasemapper.annotations.Table;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.HConnection;
 import org.apache.hadoop.hbase.client.HTableInterface;
@@ -148,16 +147,16 @@ public class BasicDataStoreTest extends BaseTest {
     }
 
 
-    @MTable(name = "Person", rowKeys = {"id"}, columnFamilies = {"info"})
+    @Table(name = "Person", rowKey = {"id"}, columnFamilies = {"info"})
     @HValidate(validator = PersonValidator.class)
     class Person {
 
         private String id;
 
-        @MColumn(family = "info", qualifier = "name")
+        @Column(family = "info", qualifier = "name")
         public String name;
 
-        @MColumn(family = "info", qualifier = "age")
+        @Column(family = "info", qualifier = "age")
         public int age;
 
 

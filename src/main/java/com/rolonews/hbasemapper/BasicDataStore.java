@@ -4,7 +4,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
-import com.rolonews.hbasemapper.annotations.MColumn;
+import com.rolonews.hbasemapper.annotations.Column;
 import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.BasicObjectSerializer;
 import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.HTableHandler;
 import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.ObjectSerializer;
@@ -122,7 +122,7 @@ public class BasicDataStore extends DataStore {
                         }
                     }
                 });
-                String rowKeyStringValue = StringUtils.join(rowkeyObjects, typeInfo.getTable().rowKeySeperator());
+                String rowKeyStringValue = StringUtils.join(rowkeyObjects, typeInfo.getTable().rowKeySeparator());
                 rowKeyBuffer = serializer.serialize(rowKeyStringValue);
             }
         }catch (IllegalAccessException e){
@@ -134,10 +134,10 @@ public class BasicDataStore extends DataStore {
     private Put createPut(final byte[] rowKey,final Object object){
         try {
             Put put = new Put(rowKey);
-            Map<MColumn, Field> columns = HTypeInfo.getOrRegisterHTypeInfo(object.getClass()).getColumns();
-            for (Map.Entry<MColumn, Field> columnFieldEntry : columns.entrySet()) {
+            Map<Column, Field> columns = HTypeInfo.getOrRegisterHTypeInfo(object.getClass()).getColumns();
+            for (Map.Entry<Column, Field> columnFieldEntry : columns.entrySet()) {
                 Field field = columnFieldEntry.getValue();
-                MColumn column = columnFieldEntry.getKey();
+                Column column = columnFieldEntry.getKey();
                 field.setAccessible(true);
                 Object fieldValue = field.get(object);
                 if (fieldValue != null) {
