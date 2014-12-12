@@ -10,33 +10,21 @@ import java.util.List;
  * Created by Sleiman on 09/12/2014.
  *
  */
-public abstract class DataStore {
+public interface DataStore {
 
-    protected final HConnection connection;
+    public void put(Object object);
 
-    protected DataStore(HConnection connection) {
-        this.connection = connection;
-    }
+    public <T> void put(List<T> objects,Class<T> clazz);
 
-    public static DataStore getInstance(final HConnection connection){
-        return new BasicDataStore(connection);
-    }
+    public void put(Object key,Object object);
 
-    public abstract void put(Object object);
+    public <K,T> void put(Function<T,K> rowKeyFunction, List<T> objects, Class<T> clazz);
 
-    public abstract <T> void put(List<T> objects,Class<T> clazz);
+    public <K,T> T get(K key);
 
-    public abstract void put(Object key,Object object);
+    public void delete(Object object);
 
-    public abstract <K,T> void put(Function<T,K> rowKeyFunction, List<T> objects, Class<T> clazz);
+    public void delete(Object key,Class<?> clazz);
 
-    public abstract <K,T> T get(K key);
 
-    public abstract void delete(Object object);
-
-    public abstract void delete(Object key,Class<?> clazz);
-
-    public HConnection getConnection(){
-        return this.connection;
-    }
 }

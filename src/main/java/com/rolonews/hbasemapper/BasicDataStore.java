@@ -24,13 +24,14 @@ import java.util.*;
  * Created by Sleiman on 10/12/2014.
  *
  */
-public class BasicDataStore extends DataStore {
+public class BasicDataStore implements DataStore {
 
     private final ObjectSerializer serializer = new BasicObjectSerializer();
 
+    private final HConnection connection;
 
     protected BasicDataStore(final HConnection connection) {
-        super(connection);
+        this.connection = connection;
     }
 
     @Override
