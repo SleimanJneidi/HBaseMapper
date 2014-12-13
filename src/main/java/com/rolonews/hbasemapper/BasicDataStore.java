@@ -6,15 +6,13 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.reflect.TypeToken;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.rolonews.hbasemapper.annotations.Column;
 import com.rolonews.hbasemapper.annotations.Table;
-import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.BasicObjectSerializer;
-import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.HResultParser;
-import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.HTableHandler;
-import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.ObjectSerializer;
+import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -109,7 +107,7 @@ public class BasicDataStore implements DataStore {
             }
 
             Result result = tableInterface.get(get);
-            if(result.isEmpty()){
+            if(result.getRow()==null){
                 return Optional.absent();
             }else{
                 HResultParser<T> resultParser = new HResultParser<T>(clazz,Optional.<Supplier<T>>absent());
@@ -122,12 +120,30 @@ public class BasicDataStore implements DataStore {
     }
 
     @Override
-    public void delete(Object object) {
+    public void delete(Object key, Class<?> clazz) {
+        Preconditions.checkNotNull(key);
+        Preconditions.checkNotNull(clazz);
 
+        byte[]rowKey = serializer.serialize(key);
+        Delete delete = new Delete(rowKey);
+        delete(Arrays.asList(delete),clazz);
     }
 
     @Override
-    public void delete(Object key, Class<?> clazz) {
+    public void delets(List<?> keys, Class<?> clazz) {
+        Preconditions.checkNotNull(keys);
+        Preconditions.checkNotNull(clazz);
+
+        List<Delete> deletes = Lists.transform(keys, new Function<Object, Delete>() {
+
+            @Nullable
+            @Override
+            public Delete apply(@Nullable Object key) {
+                byte[] row = serializer.serialize(key);
+                return new Delete(row);
+            }
+        });
+        delete(deletes,clazz);
 
     }
 
@@ -183,15 +199,42 @@ public class BasicDataStore implements DataStore {
 
     }
 
-    private void insert(final List<Put> put,Class<?> clazz){
+    private void delete(final List<Delete> deletes,Class<?> clazz){
+
+        Consumer<HTableInterface> deleteOperations = new Consumer<HTableInterface>() {
+            @Override
+            public void consume(HTableInterface hTableInterface) {
+                try {
+                    hTableInterface.delete(deletes);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+        operateOnTable(deleteOperations,clazz);
+    }
+
+    private void insert(final List<Put> puts,Class<?> clazz){
+
+            Consumer<HTableInterface> putOperations = new Consumer<HTableInterface>() {
+                @Override
+                public void consume(HTableInterface hTableInterface) {
+                    try {
+                        hTableInterface.put(puts);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+        operateOnTable(putOperations,clazz);
+    }
+
+    private void operateOnTable(Consumer<HTableInterface> tableInterfaceConsumer, Class<?> clazz){
         HTypeInfo typeInfo = HTypeInfo.getOrRegisterHTypeInfo(clazz);
         HTableInterface table = null;
         try {
-
             table = new HTableHandler(connection).getOrCreateHTable(typeInfo);
-            table.put(put);
-        }catch (IOException e){
-            throw new RuntimeException(e);
+            tableInterfaceConsumer.consume(table);
         }finally {
             if(table != null){
                 try {

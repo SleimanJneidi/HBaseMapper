@@ -10,6 +10,8 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.lang.reflect.Field;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -51,6 +53,30 @@ public class HResultParser<T> implements ResultParser<T> {
                     field.setAccessible(true);
                     Object desrializedBuffer = serializer.deserialize(resultBuffer, field.getType());
                     field.set(object, desrializedBuffer);
+                }
+
+            }
+            byte[]resultRowKey = result.getRow();
+            Map<String,Field> rowKeyMap = typeInfo.getRowKeys();
+
+            if(rowKeyMap.size() == 1){
+                Field rowField =  (Field)rowKeyMap.values().toArray()[0];
+                rowField.setAccessible(true);
+                Object rowObject = serializer.deserialize(resultRowKey,rowField.getType());
+                rowField.set(object,rowObject);
+            }else{
+                String rowAsString = Bytes.toString(resultRowKey);
+                String[] rowkeyStructure = typeInfo.getTable().rowKey();
+                String []rowSplit = rowAsString.split(Pattern.quote(typeInfo.getTable().rowKeySeparator()));
+
+                for (int i=0;i<rowkeyStructure.length;i++) {
+
+                    Field keyPartField = rowKeyMap.get(rowkeyStructure[i]);
+                    keyPartField.setAccessible(true);
+                    String split = rowSplit[i];
+
+                    Object keyPartAsObject = StringConverter.convert(keyPartField.getType(),split);
+                    keyPartField.set(object,keyPartAsObject);
                 }
 
             }
