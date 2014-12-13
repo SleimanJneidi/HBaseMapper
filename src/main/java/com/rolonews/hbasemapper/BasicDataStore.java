@@ -1,17 +1,22 @@
 package com.rolonews.hbasemapper;
 
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Supplier;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
+import com.google.common.reflect.TypeToken;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.rolonews.hbasemapper.annotations.Column;
+import com.rolonews.hbasemapper.annotations.Table;
 import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.BasicObjectSerializer;
+import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.HResultParser;
 import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.HTableHandler;
 import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.ObjectSerializer;
 import org.apache.commons.lang.StringUtils;
-import org.apache.hadoop.hbase.client.HConnection;
-import org.apache.hadoop.hbase.client.HTableInterface;
-import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import javax.annotation.Nullable;
@@ -42,6 +47,7 @@ public class BasicDataStore implements DataStore {
         Put put = createPut(rowKeyBuffer,object);
         insert(Arrays.asList(put),object.getClass());
     }
+
 
     @Override
     public <T> void put(List<T> objects, Class<T> clazz) {
@@ -88,8 +94,31 @@ public class BasicDataStore implements DataStore {
     }
 
     @Override
-    public <K, T> T get(K key) {
-        return null;
+    public <K, T> Optional<T> get(K key, Class<T> clazz) {
+        Preconditions.checkNotNull(key);
+        HTypeInfo typeInfo = HTypeInfo.getOrRegisterHTypeInfo(clazz);
+        byte[]rowKey = serializer.serialize(key);
+        try {
+
+            Table tableInfo = typeInfo.getTable();
+            HTableInterface tableInterface =  connection.getTable(tableInfo.name());
+
+            Get get = new Get(rowKey);
+            for(Column column: typeInfo.getColumns().keySet()){
+                get.addColumn(Bytes.toBytes(column.family()),Bytes.toBytes(column.qualifier()));
+            }
+
+            Result result = tableInterface.get(get);
+            if(result.isEmpty()){
+                return Optional.absent();
+            }else{
+                HResultParser<T> resultParser = new HResultParser<T>(clazz,Optional.<Supplier<T>>absent());
+                T object = resultParser.valueOf(result);
+                return Optional.of(object);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -161,7 +190,6 @@ public class BasicDataStore implements DataStore {
 
             table = new HTableHandler(connection).getOrCreateHTable(typeInfo);
             table.put(put);
-
         }catch (IOException e){
             throw new RuntimeException(e);
         }finally {

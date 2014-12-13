@@ -1,6 +1,8 @@
 package com.rolonews.hbasemapper;
 
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.hadoop.hbase.client.HConnection;
 
 import java.util.List;
@@ -20,7 +22,7 @@ public interface DataStore {
 
     public <K,T> void put(Function<T,K> rowKeyFunction, List<T> objects, Class<T> clazz);
 
-    public <K,T> T get(K key);
+    public <K,T> Optional<T> get(K key, Class<T> clazz);
 
     public void delete(Object object);
 
