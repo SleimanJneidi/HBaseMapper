@@ -26,6 +26,6 @@ public interface DataStore {
 
     public void delete(Object key,Class<?> clazz);
 
-    public void delets(List<?> keys,Class<?> clazz);
+    public void delete(List<?> keys,Class<?> clazz);
 
 }

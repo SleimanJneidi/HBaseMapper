@@ -2,16 +2,12 @@ package com.rolonews.hbasemapper;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Supplier;
-import com.google.gson.InstanceCreator;
 import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.HResultParser;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HConnection;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.Test;
-import org.mockito.Mockito;
-
-import java.lang.reflect.Type;
 
 import static org.junit.Assert.*;
 
@@ -76,8 +72,8 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
         assertEquals(foo.getJob(),foo1.getJob());
         assertEquals(foo.getAge(),foo1.getAge());
 
-
-
     }
+
+
 
 }

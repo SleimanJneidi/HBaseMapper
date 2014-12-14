@@ -15,7 +15,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class TestHTableHandler extends BaseTest{
+public class HTableHandlerTest extends BaseTest{
 
     @Mock
     private HTableInterface table;

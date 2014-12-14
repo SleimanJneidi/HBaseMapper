@@ -126,11 +126,11 @@ public class BasicDataStore implements DataStore {
 
         byte[]rowKey = serializer.serialize(key);
         Delete delete = new Delete(rowKey);
-        delete(Arrays.asList(delete),clazz);
+        deleteObjects(Arrays.asList(delete),clazz);
     }
 
     @Override
-    public void delets(List<?> keys, Class<?> clazz) {
+    public void delete(List<?> keys, Class<?> clazz) {
         Preconditions.checkNotNull(keys);
         Preconditions.checkNotNull(clazz);
 
@@ -143,7 +143,7 @@ public class BasicDataStore implements DataStore {
                 return new Delete(row);
             }
         });
-        delete(deletes,clazz);
+        deleteObjects(deletes,clazz);
 
     }
 
@@ -199,7 +199,7 @@ public class BasicDataStore implements DataStore {
 
     }
 
-    private void delete(final List<Delete> deletes,Class<?> clazz){
+    private void deleteObjects(final List<Delete> deletes,Class<?> clazz){
 
         Consumer<HTableInterface> deleteOperations = new Consumer<HTableInterface>() {
             @Override
