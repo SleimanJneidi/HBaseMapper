@@ -126,7 +126,7 @@ public class BasicDataStore implements DataStore {
 
         byte[]rowKey = serializer.serialize(key);
         Delete delete = new Delete(rowKey);
-        deleteObjects(Arrays.asList(delete),clazz);
+        deleteObjects(new ArrayList<Delete>(Arrays.asList(delete)), clazz);
     }
 
     @Override

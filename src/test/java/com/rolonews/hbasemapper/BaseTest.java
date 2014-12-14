@@ -2,11 +2,12 @@ package com.rolonews.hbasemapper;
 
 import org.apache.hadoop.hbase.HBaseTestingUtility;
 import org.apache.hadoop.hbase.MiniHBaseCluster;
-import org.apache.hadoop.hbase.client.HConnection;
-import org.apache.hadoop.hbase.client.HConnectionManager;
+import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.BasicConfigurator;
 import org.junit.BeforeClass;
 
+import javax.security.auth.login.Configuration;
 import java.io.IOException;
 
 /**
@@ -38,5 +39,20 @@ public class BaseTest {
             throw new RuntimeException(e);
         }
 
+    }
+
+    int rowCount(HTableInterface table,String family){
+        int count=0;
+        ResultScanner scanner;
+        try {
+            scanner = table.getScanner(Bytes.toBytes(family));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        for (Result result : scanner) {
+            count++;
+        }
+        return count;
     }
 }

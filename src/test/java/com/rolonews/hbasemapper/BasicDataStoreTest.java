@@ -4,6 +4,7 @@ import com.rolonews.hbasemapper.annotations.HValidate;
 import com.rolonews.hbasemapper.annotations.Column;
 import com.rolonews.hbasemapper.annotations.Table;
 import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.HConnection;
 import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.Put;
@@ -39,6 +40,9 @@ public class BasicDataStoreTest extends BaseTest {
     @Captor
     private ArgumentCaptor<List<Put>> putCaptor;
 
+    @Captor
+    private ArgumentCaptor<List<Delete>> deleteCaptors;
+
     @Before
     public void setup() throws IOException {
 
@@ -55,7 +59,7 @@ public class BasicDataStoreTest extends BaseTest {
     @Test
     public void testPutObject() throws IOException {
 
-        DataStore dataStore = DataStore.getInstance(connection);
+        DataStore dataStore = DataStoreFactory.getDataStore(connection);
         Person person = new Person();
         person.id = "someId";
         person.name = "Peter";
@@ -75,7 +79,7 @@ public class BasicDataStoreTest extends BaseTest {
 
     @Test
     public void testPutObjectWithKey() throws IOException {
-        DataStore dataStore = DataStore.getInstance(connection);
+        DataStore dataStore = DataStoreFactory.getDataStore(connection);
         Person person = new Person();
         person.name = "Peter";
         person.age = 13;
@@ -90,7 +94,7 @@ public class BasicDataStoreTest extends BaseTest {
 
     @Test
     public void testPutBulkObjects() throws IOException {
-        DataStore dataStore = DataStore.getInstance(connection);
+        DataStore dataStore = DataStoreFactory.getDataStore(connection);
 
         Person person1 = new Person();
         person1.id = "someId";
@@ -124,7 +128,7 @@ public class BasicDataStoreTest extends BaseTest {
 
     @Test
     public void testPutBulkObjectsWithArbitraryKeys(){
-        DataStore dataStore = DataStore.getInstance(connection);
+        DataStore dataStore = DataStoreFactory.getDataStore(connection);
 
         Person person1 = new Person();
         person1.name = "Peter";
@@ -143,6 +147,51 @@ public class BasicDataStoreTest extends BaseTest {
         };
 
         dataStore.put(keyFunction,Arrays.asList(person1,person2), BasicDataStoreTest.Person.class);
+
+    }
+
+    @Test
+    public void testDeleteObjects() throws IOException {
+        DataStore dataStore = DataStoreFactory.getDataStore(connection);
+
+        Person person1 = new Person();
+        person1.id = "someId";
+        person1.name = "Peter";
+        person1.age = 13;
+
+        dataStore.delete("someId", BasicDataStoreTest.Person.class);
+
+        verify(tableInterface).delete(deleteCaptors.capture());
+
+        Delete capturedDelete = deleteCaptors.getValue().get(0);
+
+        assertArrayEquals(Bytes.toBytes(person1.id),capturedDelete.getRow());
+
+    }
+
+    @Test
+    public void testBulkDeletes()throws IOException{
+        DataStore dataStore = DataStoreFactory.getDataStore(connection);
+
+        Person person1 = new Person();
+        person1.id = "someId";
+        person1.name = "Peter";
+        person1.age = 13;
+
+        Person person2 = new Person();
+        person2.id = "someId1";
+        person2.name = "John";
+        person2.age = 84;
+
+        List<BasicDataStoreTest.Person> personsToDelete = Arrays.asList(person1,person2);
+        dataStore.delete(Arrays.asList("someId","someId1"),BasicDataStoreTest.Person.class);
+
+        verify(tableInterface).delete(deleteCaptors.capture());
+        List<Delete> capturedDeletes = deleteCaptors.getValue();
+
+        for (int i=0;i<personsToDelete.size();i++) {
+            assertArrayEquals(Bytes.toBytes(personsToDelete.get(i).id),capturedDeletes.get(i).getRow());
+        }
 
     }
 
