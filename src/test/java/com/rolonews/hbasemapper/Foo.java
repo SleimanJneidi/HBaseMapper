@@ -55,4 +55,14 @@ public class Foo{
     public Foo(){
 
     }
+
+    @Override
+    public String toString() {
+        return "Foo{" +
+                "id=" + id +
+                ", age=" + age +
+                ", name='" + name + '\'' +
+                ", job='" + job + '\'' +
+                '}';
+    }
 }

@@ -3,29 +3,60 @@ package com.rolonews.hbasemapper;
 import com.google.common.base.Optional;
 import com.google.common.base.Supplier;
 import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.HResultParser;
-import com.sun.rowset.internal.*;
-import org.apache.hadoop.hbase.TableName;
+
+import com.rolonews.hbasemapper.query.QueryBuilder;
 import org.apache.hadoop.hbase.client.*;
-import org.apache.hadoop.hbase.client.coprocessor.AggregationClient;
-import org.apache.hadoop.hbase.client.coprocessor.LongColumnInterpreter;
-import org.apache.hadoop.hbase.coprocessor.ColumnInterpreter;
-import org.apache.hadoop.hbase.mapreduce.RowCounter;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.mapreduce.Job;
+import org.junit.After;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
 /**
+ *
  * Created by Sleiman on 11/12/2014.
  */
 public class BaseDataStoreIntegrationTest extends BaseTest {
 
+    private static final HConnection connection = BaseTest.getMiniClusterConnection();
+
+
+    @After
+    public void tearDown() throws IOException {
+        HBaseAdmin admin = new HBaseAdmin(connection.getConfiguration());
+        admin.disableTable("FooTrial");
+        admin.deleteTable("FooTrial");
+    }
+
+    @Test
+    public void testCanPutObjects() throws Exception{
+
+        DataStore dataStore = DataStoreFactory.getDataStore(connection);
+
+
+        Foo foo = new Foo();
+        foo.setId(1);
+        foo.setName("Sleiman");
+        foo.setAge(12);
+        foo.setJob("Jobless");
+
+        Foo foo1 = new Foo();
+        foo1.setId(2);
+        foo1.setName("Sleiman");
+        foo1.setAge(12);
+        foo1.setJob("Jobless");
+
+        dataStore.put(Arrays.asList(foo,foo1),Foo.class);
+        assertEquals(2,rowCount(connection.getTable("FooTrial"),"info"));
+    }
+
     @Test
     public void testCanParseResultFromType() throws Exception {
-        HConnection connection = BaseTest.getMiniClusterConnection();
         DataStore dataStore = DataStoreFactory.getDataStore(connection);
 
         Foo foo = new Foo();
@@ -59,7 +90,6 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
     @Test
     public void testCanGetObjectByKey() throws Exception {
 
-        HConnection connection = BaseTest.getMiniClusterConnection();
         DataStore dataStore = DataStoreFactory.getDataStore(connection);
 
         Foo foo = new Foo();
@@ -81,7 +111,6 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
 
     @Test
     public void testCanDeleteObjectByKey() throws Throwable {
-        HConnection connection = BaseTest.getMiniClusterConnection();
         DataStore dataStore = DataStoreFactory.getDataStore(connection);
 
 
@@ -111,6 +140,46 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
         rowCount = rowCount(tableInterface, "info");
         assertEquals(1, rowCount);
 
+    }
+
+    @Test
+    public void testQueryByRowPrefix(){
+        List<Foo> someFoos = getSomeFoos();
+        DataStore dataStore = DataStoreFactory.getDataStore(connection);
+        dataStore.put(someFoos,Foo.class);
+
+        QueryBuilder<Foo> queryBuilder =  new QueryBuilder.Builder<Foo>(Foo.class).rowKeyPrefix("1_").build();
+        List<Foo> results = dataStore.get(queryBuilder);
+
+        assertTrue(results.size()==2);
+    }
+
+    private List<Foo> getSomeFoos(){
+        List<Foo> foos = new ArrayList<Foo>();
+
+        Foo foo = new Foo();
+        foo.setId(1);
+        foo.setName("Sleiman");
+        foo.setAge(12);
+        foo.setJob("Jobless");
+
+        Foo foo1 = new Foo();
+        foo1.setId(1);
+        foo1.setName("Peter");
+        foo1.setAge(12);
+        foo1.setJob("Jobless");
+
+        Foo foo2 = new Foo();
+        foo2.setId(2);
+        foo2.setName("John");
+        foo2.setAge(12);
+        foo2.setJob("Jobless");
+
+        foos.add(foo);
+        foos.add(foo1);
+        foos.add(foo2);
+
+        return foos;
     }
 
 
