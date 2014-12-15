@@ -4,6 +4,7 @@ import com.google.common.base.Optional;
 import com.google.common.base.Supplier;
 import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.HResultParser;
 
+import com.rolonews.hbasemapper.exceptions.ColumnNotMappedException;
 import com.rolonews.hbasemapper.query.QueryBuilder;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -154,6 +155,67 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
         assertTrue(results.size()==2);
     }
 
+    @Test
+    public void testQueryByEquals(){
+        List<Foo> someFoos = getSomeFoos();
+        DataStore dataStore = DataStoreFactory.getDataStore(connection);
+        dataStore.put(someFoos,Foo.class);
+
+        QueryBuilder<Foo> queryBuilder =  new QueryBuilder.Builder<Foo>(Foo.class).equals("age",12).build();
+        List<Foo> results = dataStore.get(queryBuilder);
+
+        for (Foo result : results) {
+            assertEquals(12,result.getAge());
+        }
+    }
+
+    @Test
+    public void testQueryCombination(){
+        List<Foo> someFoos = getSomeFoos();
+        DataStore dataStore = DataStoreFactory.getDataStore(connection);
+        dataStore.put(someFoos,Foo.class);
+
+        QueryBuilder<Foo> queryBuilder =  new QueryBuilder.Builder<Foo>(Foo.class).rowKeyPrefix("1_").equals("job", "Programmer").build();
+        List<Foo> results = dataStore.get(queryBuilder);
+
+        for (Foo result : results) {
+            assertEquals("Programmer",result.getJob());
+            assertEquals(1,result.getId());
+        }
+    }
+
+    @Test(expected = ColumnNotMappedException.class)
+    public void testShouldThrowExceptionIfFieldDoesNotExist(){
+        List<Foo> someFoos = getSomeFoos();
+        DataStore dataStore = DataStoreFactory.getDataStore(connection);
+        dataStore.put(someFoos,Foo.class);
+
+        QueryBuilder<Foo> queryBuilder =  new QueryBuilder.Builder<Foo>(Foo.class).rowKeyPrefix("1_").equals("someStupidField", "Programmer").build();
+        List<Foo> results = dataStore.get(queryBuilder);
+
+        for (Foo result : results) {
+            assertEquals("Programmer",result.getJob());
+            assertEquals(1,result.getId());
+        }
+    }
+
+    @Test
+    public void testQueryCombination1(){
+
+        List<Foo> someFoos = getSomeFoos();
+        DataStore dataStore = DataStoreFactory.getDataStore(connection);
+        dataStore.put(someFoos,Foo.class);
+
+        QueryBuilder<Foo> queryBuilder =  new QueryBuilder.Builder<Foo>(Foo.class).greaterThanOrEqaul("age", 12).build();
+        List<Foo> results = dataStore.get(queryBuilder);
+
+        assertEquals(someFoos.size(),results.size());
+    }
+
+
+
+
+
     private List<Foo> getSomeFoos(){
         List<Foo> foos = new ArrayList<Foo>();
 
@@ -161,18 +223,18 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
         foo.setId(1);
         foo.setName("Sleiman");
         foo.setAge(12);
-        foo.setJob("Jobless");
+        foo.setJob("Programmer");
 
         Foo foo1 = new Foo();
         foo1.setId(1);
         foo1.setName("Peter");
         foo1.setAge(12);
-        foo1.setJob("Jobless");
+        foo1.setJob("Accountant");
 
         Foo foo2 = new Foo();
         foo2.setId(2);
         foo2.setName("John");
-        foo2.setAge(12);
+        foo2.setAge(13);
         foo2.setJob("Jobless");
 
         foos.add(foo);
