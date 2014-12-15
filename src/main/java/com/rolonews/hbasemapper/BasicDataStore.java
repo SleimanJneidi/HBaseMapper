@@ -13,6 +13,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.rolonews.hbasemapper.annotations.Column;
 import com.rolonews.hbasemapper.annotations.Table;
 import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.*;
+import com.rolonews.hbasemapper.query.QueryBuilder;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -38,7 +39,7 @@ public class BasicDataStore implements DataStore {
     }
 
     @Override
-    public void put(final Object object) {
+    public<T> void put(final T object) {
         Preconditions.checkNotNull(object);
 
         byte[]rowKeyBuffer = rowKey(object);
@@ -145,6 +146,33 @@ public class BasicDataStore implements DataStore {
         });
         deleteObjects(deletes,clazz);
 
+    }
+
+    @Override
+    public <T> List<T> get(final QueryBuilder<T> queryBuilder) {
+        Preconditions.checkNotNull(queryBuilder);
+        final Scan scan = queryBuilder.getScanner();
+        final List<T> results = new ArrayList<T>();
+
+        Consumer<HTableInterface> applyScan = new Consumer<HTableInterface>() {
+            @Override
+            public void consume(HTableInterface hTableInterface) {
+                try {
+                    ResultScanner resultScanner =  hTableInterface.getScanner(scan);
+                    HResultParser<T> resultParser = new HResultParser<T>(queryBuilder.getType(),Optional.<Supplier<T>>absent());
+                    for (Result result : resultScanner) {
+                        T object = resultParser.valueOf(result);
+                        results.add(object);
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+
+        operateOnTable(applyScan,queryBuilder.getType());
+
+        return results;
     }
 
     private byte[]rowKey(final Object object){

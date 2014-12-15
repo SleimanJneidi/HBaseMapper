@@ -3,6 +3,7 @@ package com.rolonews.hbasemapper;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.rolonews.hbasemapper.query.QueryBuilder;
 import org.apache.hadoop.hbase.client.HConnection;
 
 import java.util.List;
@@ -14,7 +15,7 @@ import java.util.List;
  */
 public interface DataStore {
 
-    public void put(Object object);
+    public <T> void put(T object);
 
     public <T> void put(List<T> objects,Class<T> clazz);
 
@@ -27,5 +28,7 @@ public interface DataStore {
     public void delete(Object key,Class<?> clazz);
 
     public void delete(List<?> keys,Class<?> clazz);
+
+    public <T> List<T> get(QueryBuilder<T> queryBuilder);
 
 }
