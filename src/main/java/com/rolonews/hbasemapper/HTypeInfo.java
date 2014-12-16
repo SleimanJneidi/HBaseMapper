@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.rolonews.hbasemapper.annotations.*;
 import com.rolonews.hbasemapper.exceptions.InvalidMappingException;
+import com.rolonews.hbasemapper.utils.ReflectionUtils;
 import org.slf4j.*;
 
 import java.lang.reflect.Field;
@@ -53,7 +54,7 @@ public final class HTypeInfo {
 
         String[] rowKeys = tableAnnotation.rowKey();
 
-        List<Field> allFields = getDeclaredAndInheritedFields(clazz);
+        List<Field> allFields = ReflectionUtils.getDeclaredAndInheritedFields(clazz);
         Map<Column, Field> columns = new HashMap<Column, Field>();
         Map<String, Field> rowKeysFields = new HashMap<String, Field>();
 
@@ -95,18 +96,6 @@ public final class HTypeInfo {
         return hTypeInfo;
     }
 
-    private static List<Field> getDeclaredAndInheritedFields(final Class<?> clazz) {
-        final List<Field> allFields = new ArrayList<Field>();
-        allFields.addAll(Arrays.asList(clazz.getDeclaredFields()));
-
-        Class<?> parent = clazz.getSuperclass();
-        while ((parent != null) && (parent != Object.class)) {
-            allFields.addAll(Arrays.asList(parent.getDeclaredFields()));
-            parent = parent.getSuperclass();
-        }
-
-        return allFields;
-    }
 
     private static List<HValidate> getDeclaredAndInheritedValidators(final Class<?> clazz){
         final List<HValidate> validators = new ArrayList<HValidate>();

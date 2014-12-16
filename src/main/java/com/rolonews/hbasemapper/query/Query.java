@@ -21,12 +21,12 @@ import java.util.Map;
  *
  * Created by Sleiman on 14/12/2014.
  */
-public class QueryBuilder<T> {
+public class Query<T> {
 
     private final Class<T> clazz;
     private final Scan scanner;
 
-    public QueryBuilder(Builder<T> builder) {
+    public Query(Builder<T> builder) {
         this.clazz = builder.clazz;
         this.scanner = builder.scanner;
     }
@@ -148,10 +148,10 @@ public class QueryBuilder<T> {
             return this;
         }
 
-        public QueryBuilder<T> build() {
+        public Query<T> build() {
             this.scanner.setFilter(this.filterList);
 
-            return new QueryBuilder<T>(this);
+            return new Query<T>(this);
         }
 
         private Pair<byte[], byte[]> getColumnByFieldName(final String field, HTypeInfo typeInfo) {
