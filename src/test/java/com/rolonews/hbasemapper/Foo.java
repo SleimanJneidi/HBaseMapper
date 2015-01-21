@@ -20,6 +20,7 @@ public class Foo{
     @Column(family = "info", qualifier = "job")
     private String job;
 
+
     public int getId() {
         return id;
     }

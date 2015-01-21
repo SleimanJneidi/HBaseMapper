@@ -5,7 +5,7 @@ import com.google.common.base.Supplier;
 import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.HResultParser;
 
 import com.rolonews.hbasemapper.exceptions.ColumnNotMappedException;
-import com.rolonews.hbasemapper.query.QueryBuilder;
+import com.rolonews.hbasemapper.query.Query;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.After;
@@ -149,7 +149,7 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
         DataStore dataStore = DataStoreFactory.getDataStore(connection);
         dataStore.put(someFoos,Foo.class);
 
-        QueryBuilder<Foo> queryBuilder =  new QueryBuilder.Builder<Foo>(Foo.class).rowKeyPrefix("1_").build();
+        Query<Foo> queryBuilder =  Query.builder(Foo.class).rowKeyPrefix("1_").build();
         List<Foo> results = dataStore.get(queryBuilder);
 
         assertTrue(results.size()==2);
@@ -161,7 +161,7 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
         DataStore dataStore = DataStoreFactory.getDataStore(connection);
         dataStore.put(someFoos,Foo.class);
 
-        QueryBuilder<Foo> queryBuilder =  new QueryBuilder.Builder<Foo>(Foo.class).equals("age",12).build();
+        Query<Foo> queryBuilder =  Query.builder(Foo.class).equals("age", 12).build();
         List<Foo> results = dataStore.get(queryBuilder);
 
         for (Foo result : results) {
@@ -175,7 +175,8 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
         DataStore dataStore = DataStoreFactory.getDataStore(connection);
         dataStore.put(someFoos,Foo.class);
 
-        QueryBuilder<Foo> queryBuilder =  new QueryBuilder.Builder<Foo>(Foo.class).rowKeyPrefix("1_").equals("job", "Programmer").build();
+        Query<Foo> queryBuilder =  Query.builder(Foo.class).rowKeyPrefix("1_").equals("job", "Programmer")
+                .build();
         List<Foo> results = dataStore.get(queryBuilder);
 
         for (Foo result : results) {
@@ -190,7 +191,7 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
         DataStore dataStore = DataStoreFactory.getDataStore(connection);
         dataStore.put(someFoos,Foo.class);
 
-        QueryBuilder<Foo> queryBuilder =  new QueryBuilder.Builder<Foo>(Foo.class).rowKeyPrefix("1_").equals("someStupidField", "Programmer").build();
+        Query<Foo> queryBuilder =  Query.builder(Foo.class).rowKeyPrefix("1_").equals("someStupidField", "Programmer").build();
         List<Foo> results = dataStore.get(queryBuilder);
 
         for (Foo result : results) {
@@ -206,7 +207,7 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
         DataStore dataStore = DataStoreFactory.getDataStore(connection);
         dataStore.put(someFoos,Foo.class);
 
-        QueryBuilder<Foo> queryBuilder =  new QueryBuilder.Builder<Foo>(Foo.class).greaterThanOrEqaul("age", 12).build();
+        Query<Foo> queryBuilder =  Query.builder(Foo.class).greaterThanOrEqaul("age", 12).build();
         List<Foo> results = dataStore.get(queryBuilder);
 
         assertEquals(someFoos.size(),results.size());
