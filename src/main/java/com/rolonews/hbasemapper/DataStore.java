@@ -2,7 +2,7 @@ package com.rolonews.hbasemapper;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
-import com.rolonews.hbasemapper.query.Query;
+import com.rolonews.hbasemapper.query.IQuery;
 
 import java.util.List;
 
@@ -27,6 +27,6 @@ public interface DataStore {
 
     public void delete(List<?> keys,Class<?> clazz);
 
-    public <T> List<T> get(Query<T> queryBuilder);
+    public <T> List<T> get(IQuery<T> query);
 
 }

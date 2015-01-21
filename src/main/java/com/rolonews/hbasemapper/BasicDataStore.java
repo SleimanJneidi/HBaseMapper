@@ -10,6 +10,7 @@ import com.google.common.collect.Lists;
 import com.rolonews.hbasemapper.annotations.Column;
 import com.rolonews.hbasemapper.annotations.Table;
 import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.*;
+import com.rolonews.hbasemapper.query.IQuery;
 import com.rolonews.hbasemapper.query.Query;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hbase.client.*;
@@ -146,7 +147,7 @@ public class BasicDataStore implements DataStore {
     }
 
     @Override
-    public <T> List<T> get(final Query<T> queryBuilder) {
+    public <T> List<T> get(final IQuery<T> queryBuilder) {
         Preconditions.checkNotNull(queryBuilder);
         final Scan scan = queryBuilder.getScanner();
         final List<T> results = new ArrayList<T>();

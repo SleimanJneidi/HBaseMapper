@@ -21,20 +21,26 @@ import java.util.Map;
  *
  * Created by Sleiman on 14/12/2014.
  */
-public class Query<T> {
+public class Query<T> implements IQuery<T>{
 
     private final Class<T> clazz;
     private final Scan scanner;
 
-    public Query(Builder<T> builder) {
+    private Query(Builder<T> builder) {
         this.clazz = builder.clazz;
         this.scanner = builder.scanner;
     }
 
+    public static <T> Builder<T> builder(Class<T> clazz){
+        return new Builder<T>(clazz);
+    }
+
+    @Override
     public Scan getScanner() {
         return this.scanner;
     }
 
+    @Override
     public Class<T> getType() {
         return this.clazz;
     }
@@ -47,7 +53,7 @@ public class Query<T> {
         private final FilterList filterList;
         private final HTypeInfo typeInfo;
 
-        public Builder(Class<T> clazz) {
+        protected Builder(Class<T> clazz) {
             this.clazz = clazz;
             this.scanner = new Scan();
             this.filterList = new FilterList();
@@ -67,6 +73,11 @@ public class Query<T> {
             byte[] startRowBytes = serializer.serialize(startRow);
             scanner.setStartRow(startRowBytes);
 
+            return this;
+        }
+
+        public Builder<T> limit(long limit){
+            scanner.setMaxResultSize(limit);
             return this;
         }
 

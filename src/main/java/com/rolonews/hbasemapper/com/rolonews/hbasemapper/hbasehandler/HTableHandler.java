@@ -22,7 +22,6 @@ public class HTableHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(HTableHandler.class);
 
-    private static final Lock lock = new ReentrantLock();
 
     private final HConnection connection;
 
@@ -33,14 +32,13 @@ public class HTableHandler {
     public HTableInterface getOrCreateHTable(HTypeInfo hTypeInfo){
         TableName tableName = TableName.valueOf(hTypeInfo.getTable().name());
         try {
-            lock.lock();
             if (!connection.isTableAvailable(tableName)) {
                 HTableDescriptor tableDescriptor = new HTableDescriptor(tableName);
                 for (String family : hTypeInfo.getTable().columnFamilies()) {
                     tableDescriptor.addFamily(new HColumnDescriptor(family));
                 }
 
-                LOG.info(String.format("%s table does not exit, so we creating it",tableName.toString()));
+                LOG.debug(String.format("%s table does not exit, so we creating it",tableName.toString()));
                 HBaseAdmin admin = new HBaseAdmin(connection.getConfiguration());
                 admin.createTable(tableDescriptor);
             }
@@ -49,8 +47,6 @@ public class HTableHandler {
 
         }catch(IOException e){
             throw new RuntimeException(e);
-        }finally {
-            lock.unlock();
         }
     }
 

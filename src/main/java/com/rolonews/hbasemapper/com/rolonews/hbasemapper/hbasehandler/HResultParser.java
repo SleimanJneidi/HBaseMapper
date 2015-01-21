@@ -6,6 +6,7 @@ import com.google.common.base.Supplier;
 import com.rolonews.hbasemapper.HTypeInfo;
 import com.rolonews.hbasemapper.ResultParser;
 import com.rolonews.hbasemapper.annotations.Column;
+import com.rolonews.hbasemapper.query.QueryResult;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 
@@ -22,6 +23,8 @@ public class HResultParser<T> implements ResultParser<T> {
     private final Class<T> clazz;
 
     private final Optional<Supplier<T>> instanceCreator;
+
+    private final ObjectSerializer serializer = new BasicObjectSerializer();
 
     public HResultParser(final Class<T> clazz,final Optional<Supplier<T>> instanceSupplier) {
         Preconditions.checkNotNull(clazz);
@@ -88,4 +91,12 @@ public class HResultParser<T> implements ResultParser<T> {
         }
 
     }
+
+    public <K> QueryResult<K,T> queryResult(Result result){
+        //serializer.deserialize(result.getRow(),K.class);
+         //K k =  result.getRow();
+        return null;
+    }
+
+
 }
