@@ -11,7 +11,6 @@ import com.rolonews.hbasemapper.annotations.Column;
 import com.rolonews.hbasemapper.annotations.Table;
 import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.*;
 import com.rolonews.hbasemapper.query.IQuery;
-import com.rolonews.hbasemapper.query.Query;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -20,6 +19,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
+import static com.rolonews.hbasemapper.SerializationFactory.*;
 
 /**
  *
@@ -28,7 +28,6 @@ import java.util.*;
  */
 public class BasicDataStore implements DataStore {
 
-    private final ObjectSerializer serializer = new BasicObjectSerializer();
 
     private final HConnection connection;
 
@@ -66,7 +65,7 @@ public class BasicDataStore implements DataStore {
         Preconditions.checkNotNull(key);
         Preconditions.checkNotNull(object);
 
-        byte[]rowKey = serializer.serialize(key);
+        byte[]rowKey = getSerializer(key).serialize(key);
         Put put = createPut(rowKey,object);
 
         insert(Arrays.asList(put),object.getClass());
@@ -83,7 +82,8 @@ public class BasicDataStore implements DataStore {
 
         List<Put> puts = new ArrayList<Put>();
         for(T object: objects){
-            byte[]rowKey = this.serializer.serialize(rowKeyFunction.apply(object));
+            Object rowKeyValue = rowKeyFunction.apply(object);
+            byte[]rowKey = getSerializer(rowKeyValue).serialize(rowKeyValue);
             Put put = createPut(rowKey,object);
             puts.add(put);
         }
@@ -94,7 +94,7 @@ public class BasicDataStore implements DataStore {
     public <K, T> Optional<T> get(K key, Class<T> clazz) {
         Preconditions.checkNotNull(key);
         HTypeInfo typeInfo = HTypeInfo.getOrRegisterHTypeInfo(clazz);
-        byte[]rowKey = serializer.serialize(key);
+        byte[]rowKey = getSerializer(key).serialize(key);
         try {
 
             Table tableInfo = typeInfo.getTable();
@@ -123,7 +123,7 @@ public class BasicDataStore implements DataStore {
         Preconditions.checkNotNull(key);
         Preconditions.checkNotNull(clazz);
 
-        byte[]rowKey = serializer.serialize(key);
+        byte[]rowKey = getSerializer(key).serialize(key);
         Delete delete = new Delete(rowKey);
         deleteObjects(new ArrayList<Delete>(Arrays.asList(delete)), clazz);
     }
@@ -138,7 +138,7 @@ public class BasicDataStore implements DataStore {
             @Nullable
             @Override
             public Delete apply(@Nullable Object key) {
-                byte[] row = serializer.serialize(key);
+                byte[] row = getSerializer(key).serialize(key);
                 return new Delete(row);
             }
         });
@@ -180,7 +180,8 @@ public class BasicDataStore implements DataStore {
             if (typeInfo.getRowKeys().size() == 1) {
                 Field rowField = Iterables.getLast(typeInfo.getRowKeys().values());
                 rowField.setAccessible(true);
-                rowKeyBuffer = serializer.serialize(rowField.get(object));
+                Object rowFieldValue = rowField.get(object);
+                rowKeyBuffer = getSerializer(rowFieldValue).serialize(rowFieldValue);
             } else {
                 Collection<Object> rowkeyObjects = Collections2.transform(typeInfo.getRowKeys().values(), new Function<Field, Object>() {
                     @Nullable
@@ -195,7 +196,7 @@ public class BasicDataStore implements DataStore {
                     }
                 });
                 String rowKeyStringValue = StringUtils.join(rowkeyObjects, typeInfo.getTable().rowKeySeparator());
-                rowKeyBuffer = serializer.serialize(rowKeyStringValue);
+                rowKeyBuffer = getSerializer(rowKeyStringValue).serialize(rowKeyStringValue);
             }
         }catch (IllegalAccessException e){
             throw new RuntimeException(e);
@@ -213,7 +214,7 @@ public class BasicDataStore implements DataStore {
                 field.setAccessible(true);
                 Object fieldValue = field.get(object);
                 if (fieldValue != null) {
-                    byte[] buffer = serializer.serialize(fieldValue);
+                    byte[] buffer = getSerializer(fieldValue).serialize(fieldValue);
                     put.add(Bytes.toBytes(column.family()), Bytes.toBytes(column.qualifier()), buffer);
                 }
 

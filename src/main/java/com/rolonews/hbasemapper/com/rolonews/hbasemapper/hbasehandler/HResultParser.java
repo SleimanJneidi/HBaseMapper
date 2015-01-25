@@ -24,7 +24,6 @@ public class HResultParser<T> implements ResultParser<T> {
 
     private final Optional<Supplier<T>> instanceCreator;
 
-    private final ObjectSerializer serializer = new BasicObjectSerializer();
 
     public HResultParser(final Class<T> clazz,final Optional<Supplier<T>> instanceSupplier) {
         Preconditions.checkNotNull(clazz);
@@ -91,12 +90,5 @@ public class HResultParser<T> implements ResultParser<T> {
         }
 
     }
-
-    public <K> QueryResult<K,T> queryResult(Result result){
-        //serializer.deserialize(result.getRow(),K.class);
-         //K k =  result.getRow();
-        return null;
-    }
-
 
 }
