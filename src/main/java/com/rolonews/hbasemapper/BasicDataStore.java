@@ -9,7 +9,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.rolonews.hbasemapper.annotations.Column;
 import com.rolonews.hbasemapper.annotations.Table;
-import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.*;
 import com.rolonews.hbasemapper.query.IQuery;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hbase.client.*;
@@ -93,15 +92,18 @@ public class BasicDataStore implements DataStore {
     @Override
     public <K, T> Optional<T> get(K key, Class<T> clazz) {
         Preconditions.checkNotNull(key);
-        HTypeInfo typeInfo = HTypeInfo.getOrRegisterHTypeInfo(clazz);
+        AnnotationEntityMapper typeInfo = AnnotationEntityMapper.getOrRegisterAnnotationEntityMapper(clazz);
         byte[]rowKey = getSerializer(key).serialize(key);
         try {
 
-            Table tableInfo = typeInfo.getTable();
+            Table tableInfo = typeInfo.table();
             HTableInterface tableInterface =  connection.getTable(tableInfo.name());
 
             Get get = new Get(rowKey);
-            for(Column column: typeInfo.getColumns().keySet()){
+
+            Set<Column> columns = typeInfo.columns().keySet();
+
+            for(Column column: columns){
                 get.addColumn(Bytes.toBytes(column.family()),Bytes.toBytes(column.qualifier()));
             }
 
@@ -176,14 +178,15 @@ public class BasicDataStore implements DataStore {
     private byte[]rowKey(final Object object){
         byte[]rowKeyBuffer;
         try {
-            HTypeInfo typeInfo = HTypeInfo.getOrRegisterHTypeInfo(object.getClass());
-            if (typeInfo.getRowKeys().size() == 1) {
-                Field rowField = Iterables.getLast(typeInfo.getRowKeys().values());
+            AnnotationEntityMapper typeInfo = AnnotationEntityMapper.getOrRegisterAnnotationEntityMapper(object.getClass());
+            if (typeInfo.rowKeys().size() == 1) {
+                Collection<Field> rowKeys = typeInfo.rowKeys().values();
+                Field rowField = Iterables.getLast(rowKeys);
                 rowField.setAccessible(true);
                 Object rowFieldValue = rowField.get(object);
                 rowKeyBuffer = getSerializer(rowFieldValue).serialize(rowFieldValue);
             } else {
-                Collection<Object> rowkeyObjects = Collections2.transform(typeInfo.getRowKeys().values(), new Function<Field, Object>() {
+                Collection<Object> rowkeyObjects = Collections2.transform(typeInfo.rowKeys().values(), new Function<Field, Object>() {
                     @Nullable
                     @Override
                     public Object apply(Field field) {
@@ -195,7 +198,7 @@ public class BasicDataStore implements DataStore {
                         }
                     }
                 });
-                String rowKeyStringValue = StringUtils.join(rowkeyObjects, typeInfo.getTable().rowKeySeparator());
+                String rowKeyStringValue = StringUtils.join(rowkeyObjects, typeInfo.table().rowKeySeparator());
                 rowKeyBuffer = getSerializer(rowKeyStringValue).serialize(rowKeyStringValue);
             }
         }catch (IllegalAccessException e){
@@ -207,7 +210,7 @@ public class BasicDataStore implements DataStore {
     private Put createPut(final byte[] rowKey,final Object object){
         try {
             Put put = new Put(rowKey);
-            Map<Column, Field> columns = HTypeInfo.getOrRegisterHTypeInfo(object.getClass()).getColumns();
+            Map<Column, Field> columns = AnnotationEntityMapper.getOrRegisterAnnotationEntityMapper(object.getClass()).rowKeys();
             for (Map.Entry<Column, Field> columnFieldEntry : columns.entrySet()) {
                 Field field = columnFieldEntry.getValue();
                 Column column = columnFieldEntry.getKey();
@@ -257,7 +260,7 @@ public class BasicDataStore implements DataStore {
     }
 
     private void operateOnTable(Consumer<HTableInterface> tableInterfaceConsumer, Class<?> clazz){
-        HTypeInfo typeInfo = HTypeInfo.getOrRegisterHTypeInfo(clazz);
+        AnnotationEntityMapper typeInfo = AnnotationEntityMapper.getOrRegisterAnnotationEntityMapper(clazz);
         HTableInterface table = null;
         try {
             table = new HTableHandler(connection).getOrCreateHTable(typeInfo);

@@ -1,8 +1,6 @@
 package com.rolonews.hbasemapper;
 
 import com.google.common.base.Preconditions;
-import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.BasicObjectSerializer;
-import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.ObjectSerializer;
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 

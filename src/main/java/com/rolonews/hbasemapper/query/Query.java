@@ -4,10 +4,10 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
-import com.rolonews.hbasemapper.HTypeInfo;
+import com.rolonews.hbasemapper.AnnotationEntityMapper;
 import com.rolonews.hbasemapper.annotations.Column;
-import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.BasicObjectSerializer;
-import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.ObjectSerializer;
+import com.rolonews.hbasemapper.BasicObjectSerializer;
+import com.rolonews.hbasemapper.ObjectSerializer;
 import com.rolonews.hbasemapper.exceptions.ColumnNotMappedException;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.filter.*;
@@ -51,14 +51,14 @@ public class Query<T> implements IQuery<T>{
         private final Scan scanner;
         private final ObjectSerializer serializer;
         private final FilterList filterList;
-        private final HTypeInfo typeInfo;
+        private final AnnotationEntityMapper typeInfo;
 
         protected Builder(Class<T> clazz) {
             this.clazz = clazz;
             this.scanner = new Scan();
             this.filterList = new FilterList();
             this.serializer = new BasicObjectSerializer();
-            this.typeInfo = HTypeInfo.getOrRegisterHTypeInfo(clazz);
+            this.typeInfo = AnnotationEntityMapper.getOrRegisterAnnotationEntityMapper(clazz);
 
         }
 
@@ -165,7 +165,7 @@ public class Query<T> implements IQuery<T>{
             return new Query<T>(this);
         }
 
-        private Pair<byte[], byte[]> getColumnByFieldName(final String field, HTypeInfo typeInfo) {
+        private Pair<byte[], byte[]> getColumnByFieldName(final String field, AnnotationEntityMapper typeInfo) {
 
             Map<Column, Field> columnFieldMap = Maps.filterKeys(typeInfo.getColumns(), new Predicate<Column>() {
                 @Override

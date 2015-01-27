@@ -1,12 +1,9 @@
-package com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler;
+package com.rolonews.hbasemapper;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
-import com.rolonews.hbasemapper.HTypeInfo;
-import com.rolonews.hbasemapper.ResultParser;
 import com.rolonews.hbasemapper.annotations.Column;
-import com.rolonews.hbasemapper.query.QueryResult;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 
@@ -37,7 +34,7 @@ public class HResultParser<T> implements ResultParser<T> {
     public T valueOf(Result result) {
         Preconditions.checkNotNull(result);
 
-        HTypeInfo typeInfo = HTypeInfo.getOrRegisterHTypeInfo(clazz);
+        AnnotationEntityMapper typeInfo = AnnotationEntityMapper.getOrRegisterAnnotationEntityMapper(clazz);
 
         try {
             T object = instanceCreator.isPresent() ? instanceCreator.get().get() : clazz.newInstance();

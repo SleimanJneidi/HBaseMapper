@@ -17,7 +17,7 @@ import java.util.*;
  * Created by Sleiman on 25/01/2015.
  */
 
-class FluentEntityBuilder<T> implements EntityMapper<T> {
+class FluentEntityMapper<T> implements EntityMapper<T> {
 
     private final Class<T> clazz;
     private final Table table;
@@ -44,7 +44,7 @@ class FluentEntityBuilder<T> implements EntityMapper<T> {
         return this.columns;
     }
 
-    private FluentEntityBuilder(Builder<T> builder){
+    private FluentEntityMapper(Builder<T> builder){
         this.clazz = builder.clazz;
         this.table = builder.table;
         this.rowKeys = builder.rowKeys;
@@ -98,7 +98,7 @@ class FluentEntityBuilder<T> implements EntityMapper<T> {
             this.tableName = tableName;
         }
 
-        public FluentEntityBuilder<T> build(){
+        public FluentEntityMapper<T> build(){
 
             Preconditions.checkArgument(StringUtils.isNotBlank(tableName));
             Preconditions.checkArgument(rowKeyFieldsName.size() >= 1);
@@ -196,7 +196,7 @@ class FluentEntityBuilder<T> implements EntityMapper<T> {
                 }
             };
 
-            return new FluentEntityBuilder<T>(this);
+            return new FluentEntityMapper<T>(this);
         }
 
 

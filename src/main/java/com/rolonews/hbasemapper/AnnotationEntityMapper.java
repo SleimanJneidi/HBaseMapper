@@ -1,7 +1,5 @@
 package com.rolonews.hbasemapper;
-import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
 import com.rolonews.hbasemapper.annotations.*;
 import com.rolonews.hbasemapper.exceptions.InvalidMappingException;
 import com.rolonews.hbasemapper.utils.ReflectionUtils;
@@ -16,18 +14,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by Sleiman on 06/12/2014.
  *
  */
-public final class HTypeInfo {
-
-    private static final Logger LOG = LoggerFactory.getLogger(HTypeInfo.class);
-    private static final Map<Class<?>, HTypeInfo> typeMap = new ConcurrentHashMap<Class<?>, HTypeInfo>();
+public final class AnnotationEntityMapper<T> implements EntityMapper<T> {
 
     private final Table table;
-    private final Class<?> clazz;
+    private final Class<T> clazz;
     private final Map<String, Field> rowKeys;
     private final Map<Column, Field> columns;
     private final List<HValidate> validators;
 
-    private HTypeInfo(Class<?> clazz, Table table, Map<Column, Field> columns, Map<String, Field> rowKeys, List<HValidate> validators) {
+    private AnnotationEntityMapper(Class<T> clazz, Table table, Map<Column, Field> columns, Map<String, Field> rowKeys, List<HValidate> validators) {
         this.clazz = clazz;
         this.table = table;
         this.columns = columns;
@@ -35,22 +30,17 @@ public final class HTypeInfo {
         this.validators = validators;
     }
 
-    public static HTypeInfo register(Class<?> clazz) {
+    public static <T> EntityMapper<T> register(Class<T> clazz) {
         Preconditions.checkNotNull(clazz);
 
-        if (typeMap.containsKey(clazz)) {
-            LOG.warn(clazz.getName() + " is already mapped");
-            return typeMap.get(clazz);
-        }
-
-        HTypeInfo hTypeInfo = createHTypeInfo(clazz);
-        typeMap.put(clazz, hTypeInfo);
-        return hTypeInfo;
+        EntityMapper<T> mapper = createAnnotationMapping(clazz);
+        MappingRegistry.register(mapper);
+        return mapper;
     }
 
-    private static HTypeInfo createHTypeInfo(Class<?> clazz) {
+    private static <T> EntityMapper<T> createAnnotationMapping(Class<T> clazz) {
 
-        Table tableAnnotation = getMTable(clazz);
+        Table tableAnnotation = getTable(clazz);
 
         String[] rowKeys = tableAnnotation.rowKey();
 
@@ -58,14 +48,7 @@ public final class HTypeInfo {
         Map<Column, Field> columns = new HashMap<Column, Field>();
         Map<String, Field> rowKeysFields = new HashMap<String, Field>();
 
-        Map<String, Field> map = Maps.uniqueIndex(allFields, new Function<Field, String>() {
-
-            @Override
-            public String apply(Field field) {
-                return field.getName();
-            }
-
-        });
+        Map<String, Field> map = ReflectionUtils.getDeclaredAndInheritedFieldsMap(clazz);
 
         for (String rowKey : rowKeys) { // check if there are fields that match row keys
             if (!map.containsKey(rowKey)) {
@@ -92,8 +75,8 @@ public final class HTypeInfo {
 
         // get validator
         List<HValidate> validators = getDeclaredAndInheritedValidators(clazz);
-        HTypeInfo hTypeInfo = new HTypeInfo(clazz, tableAnnotation, columns, rowKeysFields, validators);
-        return hTypeInfo;
+        EntityMapper<T> mapper = new AnnotationEntityMapper<T>(clazz, tableAnnotation, columns, rowKeysFields, validators);
+        return mapper;
     }
 
 
@@ -115,42 +98,21 @@ public final class HTypeInfo {
         return validators;
     }
 
-    /**
-     * @param clazz
-     * @return the HTypeInfo
-     */
-    public static HTypeInfo getHTypeInfo(Class<?> clazz) {
-        return typeMap.get(clazz);
-    }
 
-    public static HTypeInfo getOrRegisterHTypeInfo(Class<?> clazz) {
-        if (!typeMap.containsKey(clazz)) {
+
+    public static <T> EntityMapper<T> getOrRegisterAnnotationEntityMapper(Class<T> clazz) {
+        if (MappingRegistry.getMapping(clazz)==null) {
             register(clazz);
         }
-        return typeMap.get(clazz);
+        return MappingRegistry.getMapping(clazz);
     }
 
-    public Table getTable() {
-        return this.table;
-    }
-
-    public Class<?> getClazz() {
-        return this.clazz;
-    }
-
-    public Map<String, Field> getRowKeys() {
-        return this.rowKeys;
-    }
-
-    public Map<Column, Field> getColumns() {
-        return this.columns;
-    }
 
     public List<HValidate> getValidators(){
         return this.validators;
     }
 
-    private static Table getMTable(Class<?> clazz){
+    private static Table getTable(Class<?> clazz){
         Table tableAnnotation = clazz.getAnnotation(Table.class);
         if(tableAnnotation != null){
             return tableAnnotation;
@@ -164,5 +126,25 @@ public final class HTypeInfo {
         }
         throw new InvalidMappingException(clazz.getName() + " is not annotated by " + Table.class.getName());
 
+    }
+
+    @Override
+    public Class<T> clazz() {
+        return this.clazz;
+    }
+
+    @Override
+    public Table table() {
+        return this.table;
+    }
+
+    @Override
+    public Map<String, Field> rowKeys() {
+        return this.rowKeys;
+    }
+
+    @Override
+    public Map<Column, Field> columns() {
+        return this.columns;
     }
 }

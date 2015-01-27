@@ -1,4 +1,4 @@
-package com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler;
+package com.rolonews.hbasemapper;
 
 
 /**
