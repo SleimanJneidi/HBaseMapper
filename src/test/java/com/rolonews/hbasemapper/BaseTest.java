@@ -5,7 +5,9 @@ import org.apache.hadoop.hbase.MiniHBaseCluster;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Level;
 import org.junit.BeforeClass;
+import org.slf4j.Logger;
 
 import javax.security.auth.login.Configuration;
 import java.io.IOException;
@@ -19,6 +21,7 @@ public class BaseTest {
     @BeforeClass
     public static void init(){
         BasicConfigurator.configure();
+        org.apache.log4j.Logger.getRootLogger().setLevel(Level.ERROR);
     }
 
 

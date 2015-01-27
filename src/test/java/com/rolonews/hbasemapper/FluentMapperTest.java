@@ -11,7 +11,7 @@ public class FluentMapperTest {
     @Test
     public void testValidMapping(){
 
-        EntityMapper<Bar> mapper = FluentEntityBuilder.builder(Bar.class,"bar")
+        EntityMapper<Bar> mapper = FluentEntityMapper.builder(Bar.class, "bar")
                 .withRowKey("id")
                 .withRowKey("name")
                 .withRowKeySeparator("$")

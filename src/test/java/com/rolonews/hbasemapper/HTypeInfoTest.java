@@ -16,18 +16,18 @@ public class HTypeInfoTest extends BaseTest {
 
     @Test
     public void testCanRegisterValidType(){
-        HTypeInfo hTypeInfo = HTypeInfo.register(Person.class);
+        AnnotationEntityMapper hTypeInfo = AnnotationEntityMapper.register(Person.class);
         assertNotNull(hTypeInfo);
     }
 
     @Test(expected = InvalidMappingException.class)
     public void testShouldThrowInvalidMappingException(){
-        HTypeInfo.register(InvalidObject.class);
+        AnnotationEntityMapper.register(InvalidObject.class);
     }
 
     @Test
     public void testCanReadMappingFromParentClass(){
-        HTypeInfo hTypeInfo = HTypeInfo.register(Student.class);
+        AnnotationEntityMapper hTypeInfo = AnnotationEntityMapper.register(Student.class);
         String tableName = hTypeInfo.getTable().name();
 
         assertEquals("Person", tableName);
@@ -40,7 +40,7 @@ public class HTypeInfoTest extends BaseTest {
         student.age = 14;
         student.name = "Peter";
 
-        HTypeInfo hTypeInfo = HTypeInfo.register(student.getClass());
+        AnnotationEntityMapper hTypeInfo = AnnotationEntityMapper.register(student.getClass());
         List<HValidate> validators = hTypeInfo.getValidators();
 
         for(HValidate validator: validators){
@@ -53,7 +53,7 @@ public class HTypeInfoTest extends BaseTest {
 
     @Test
     public void testCanMapInheritedClass(){
-        HTypeInfo typeInfo = HTypeInfo.getOrRegisterHTypeInfo(SubInheritanceDummy.class);
+        AnnotationEntityMapper typeInfo = AnnotationEntityMapper.getOrRegisterAnnotationEntityMapper(SubInheritanceDummy.class);
         assertEquals("BaseInheritanceDummy",typeInfo.getTable().name());
     }
 

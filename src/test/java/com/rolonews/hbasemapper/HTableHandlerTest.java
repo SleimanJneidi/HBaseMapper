@@ -1,6 +1,5 @@
 package com.rolonews.hbasemapper;
 
-import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.HTableHandler;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;

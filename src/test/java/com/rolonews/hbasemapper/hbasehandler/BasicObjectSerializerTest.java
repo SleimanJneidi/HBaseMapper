@@ -1,7 +1,7 @@
 package com.rolonews.hbasemapper.hbasehandler;
 
-import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.BasicObjectSerializer;
-import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.ObjectSerializer;
+import com.rolonews.hbasemapper.BasicObjectSerializer;
+import com.rolonews.hbasemapper.ObjectSerializer;
 import org.junit.Test;
 
 import java.math.BigDecimal;

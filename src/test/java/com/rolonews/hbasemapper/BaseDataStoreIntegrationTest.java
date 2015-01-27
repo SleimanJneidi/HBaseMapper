@@ -2,7 +2,6 @@ package com.rolonews.hbasemapper;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Supplier;
-import com.rolonews.hbasemapper.com.rolonews.hbasemapper.hbasehandler.HResultParser;
 
 import com.rolonews.hbasemapper.exceptions.ColumnNotMappedException;
 import com.rolonews.hbasemapper.query.Query;
