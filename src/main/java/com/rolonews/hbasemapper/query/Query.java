@@ -5,6 +5,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.rolonews.hbasemapper.AnnotationEntityMapper;
+import com.rolonews.hbasemapper.EntityMapper;
 import com.rolonews.hbasemapper.annotations.Column;
 import com.rolonews.hbasemapper.BasicObjectSerializer;
 import com.rolonews.hbasemapper.ObjectSerializer;
@@ -51,7 +52,7 @@ public class Query<T> implements IQuery<T>{
         private final Scan scanner;
         private final ObjectSerializer serializer;
         private final FilterList filterList;
-        private final AnnotationEntityMapper typeInfo;
+        private final EntityMapper<T> typeInfo;
 
         protected Builder(Class<T> clazz) {
             this.clazz = clazz;
@@ -165,9 +166,9 @@ public class Query<T> implements IQuery<T>{
             return new Query<T>(this);
         }
 
-        private Pair<byte[], byte[]> getColumnByFieldName(final String field, AnnotationEntityMapper typeInfo) {
+        private Pair<byte[], byte[]> getColumnByFieldName(final String field, EntityMapper<?> typeInfo) {
 
-            Map<Column, Field> columnFieldMap = Maps.filterKeys(typeInfo.getColumns(), new Predicate<Column>() {
+            Map<Column, Field> columnFieldMap = Maps.filterKeys(typeInfo.columns(), new Predicate<Column>() {
                 @Override
                 public boolean apply(Column column) {
                     return column.qualifier().equals(field);
