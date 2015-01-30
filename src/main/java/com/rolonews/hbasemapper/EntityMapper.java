@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * Created by Sleiman on 25/01/2015.
  */
-interface EntityMapper<T>{
+public interface EntityMapper<T>{
     Class<T> clazz();
     Table table();
     Map<String,Field> rowKeys();
