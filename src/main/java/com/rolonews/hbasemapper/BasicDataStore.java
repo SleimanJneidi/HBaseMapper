@@ -92,7 +92,7 @@ public class BasicDataStore implements DataStore {
     @Override
     public <K, T> Optional<T> get(K key, Class<T> clazz) {
         Preconditions.checkNotNull(key);
-        AnnotationEntityMapper typeInfo = AnnotationEntityMapper.getOrRegisterAnnotationEntityMapper(clazz);
+        EntityMapper<?> typeInfo = MappingRegistry.registerIfAbsent(clazz);
         byte[]rowKey = getSerializer(key).serialize(key);
         try {
 
@@ -178,7 +178,7 @@ public class BasicDataStore implements DataStore {
     private byte[]rowKey(final Object object){
         byte[]rowKeyBuffer;
         try {
-            AnnotationEntityMapper typeInfo = AnnotationEntityMapper.getOrRegisterAnnotationEntityMapper(object.getClass());
+            EntityMapper<?> typeInfo = MappingRegistry.registerIfAbsent(object.getClass());
             if (typeInfo.rowKeys().size() == 1) {
                 Collection<Field> rowKeys = typeInfo.rowKeys().values();
                 Field rowField = Iterables.getLast(rowKeys);
@@ -210,7 +210,7 @@ public class BasicDataStore implements DataStore {
     private Put createPut(final byte[] rowKey,final Object object){
         try {
             Put put = new Put(rowKey);
-            Map<Column, Field> columns = AnnotationEntityMapper.getOrRegisterAnnotationEntityMapper(object.getClass()).rowKeys();
+            Map<Column, Field> columns = MappingRegistry.registerIfAbsent(object.getClass()).columns();
             for (Map.Entry<Column, Field> columnFieldEntry : columns.entrySet()) {
                 Field field = columnFieldEntry.getValue();
                 Column column = columnFieldEntry.getKey();
@@ -260,7 +260,7 @@ public class BasicDataStore implements DataStore {
     }
 
     private void operateOnTable(Consumer<HTableInterface> tableInterfaceConsumer, Class<?> clazz){
-        AnnotationEntityMapper typeInfo = AnnotationEntityMapper.getOrRegisterAnnotationEntityMapper(clazz);
+        EntityMapper<?> typeInfo = AnnotationEntityMapper.getOrRegisterAnnotationEntityMapper(clazz);
         HTableInterface table = null;
         try {
             table = new HTableHandler(connection).getOrCreateHTable(typeInfo);

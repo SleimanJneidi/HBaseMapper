@@ -34,21 +34,21 @@ public class HResultParser<T> implements ResultParser<T> {
     public T valueOf(Result result) {
         Preconditions.checkNotNull(result);
 
-        AnnotationEntityMapper typeInfo = AnnotationEntityMapper.getOrRegisterAnnotationEntityMapper(clazz);
+        EntityMapper<?> typeInfo = AnnotationEntityMapper.getOrRegisterAnnotationEntityMapper(clazz);
 
         try {
             T object = instanceCreator.isPresent() ? instanceCreator.get().get() : clazz.newInstance();
 
             ObjectSerializer serializer = new BasicObjectSerializer();
 
-            for (Column mColumn : typeInfo.getColumns().keySet()) {
+            for (Column mColumn : typeInfo.columns().keySet()) {
 
                 byte[] familyBuffer = Bytes.toBytes(mColumn.family());
                 byte[] qualifierBuffer = Bytes.toBytes(mColumn.qualifier());
                 byte[] resultBuffer = result.getValue(familyBuffer, qualifierBuffer);
 
                 if (resultBuffer != null) {
-                    Field field = typeInfo.getColumns().get(mColumn);
+                    Field field = typeInfo.columns().get(mColumn);
                     field.setAccessible(true);
                     Object desrializedBuffer = serializer.deserialize(resultBuffer, field.getType());
                     field.set(object, desrializedBuffer);
@@ -56,7 +56,7 @@ public class HResultParser<T> implements ResultParser<T> {
 
             }
             byte[]resultRowKey = result.getRow();
-            Map<String,Field> rowKeyMap = typeInfo.getRowKeys();
+            Map<String,Field> rowKeyMap = typeInfo.rowKeys();
 
             if(rowKeyMap.size() == 1){
                 Field rowField =  (Field)rowKeyMap.values().toArray()[0];
@@ -65,8 +65,8 @@ public class HResultParser<T> implements ResultParser<T> {
                 rowField.set(object,rowObject);
             }else{
                 String rowAsString = Bytes.toString(resultRowKey);
-                String[] rowkeyStructure = typeInfo.getTable().rowKey();
-                String []rowSplit = rowAsString.split(Pattern.quote(typeInfo.getTable().rowKeySeparator()));
+                String[] rowkeyStructure = typeInfo.table().rowKey();
+                String []rowSplit = rowAsString.split(Pattern.quote(typeInfo.table().rowKeySeparator()));
 
                 for (int i=0;i<rowkeyStructure.length;i++) {
 
