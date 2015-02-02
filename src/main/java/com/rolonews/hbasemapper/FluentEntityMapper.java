@@ -1,11 +1,15 @@
 package com.rolonews.hbasemapper;
 
+import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.rolonews.hbasemapper.annotations.Column;
 import com.rolonews.hbasemapper.annotations.Table;
 import com.rolonews.hbasemapper.exceptions.InvalidMappingException;
 import com.rolonews.hbasemapper.utils.ReflectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.util.Triple;
 
 import java.lang.annotation.Annotation;
@@ -20,9 +24,9 @@ import java.util.*;
 class FluentEntityMapper<T> implements EntityMapper<T> {
 
     private final Class<T> clazz;
-    private final Table table;
-    private final Map<String, Field> rowKeys;
     private final Map<Column, Field> columns;
+    private final HTableDescriptor tableDescriptor;
+    private final Function<T,?> rowKeyGenerator;
 
     @Override
     public Class<T> clazz() {
@@ -30,14 +34,15 @@ class FluentEntityMapper<T> implements EntityMapper<T> {
     }
 
     @Override
-    public Table table() {
-        return this.table;
+    public HTableDescriptor tableDescriptor() {
+        return this.tableDescriptor;
     }
 
     @Override
-    public Map<String, Field> rowKeys() {
-        return this.rowKeys;
+    public Function<T, ?> rowKeyGenerator() {
+        return this.rowKeyGenerator;
     }
+
 
     @Override
     public Map<Column, Field> columns() {
@@ -46,9 +51,14 @@ class FluentEntityMapper<T> implements EntityMapper<T> {
 
     private FluentEntityMapper(Builder<T> builder){
         this.clazz = builder.clazz;
-        this.table = builder.table;
-        this.rowKeys = builder.rowKeys;
         this.columns = builder.columns;
+        this.tableDescriptor = new HTableDescriptor(TableName.valueOf(builder.tableName));
+
+        for (String family : builder.columnFamilies) {
+            this.tableDescriptor.addFamily(new HColumnDescriptor(family));
+        }
+        this.rowKeyGenerator = builder.rowKeyGenerator;
+
     }
 
     public static <T> Builder<T> builder(Class<T> clazz, String tableName){
@@ -62,11 +72,10 @@ class FluentEntityMapper<T> implements EntityMapper<T> {
         private Class<T> clazz;
         private final Set<String> columnFamilies = new HashSet<String>();
         private List<Field> allFields;
-        private List<String> rowKeyFieldsName = new ArrayList<String>();
-        private String rowKeySeparator;
+        private Function<T,?> rowKeyGenerator;
+
         private List<Triple<String,String,String>> columnsFields = new ArrayList<Triple<String, String,String>>();
 
-        private Table table;
         private Map<String, Field> rowKeys;
         private Map<Column, Field> columns;
 
@@ -75,13 +84,8 @@ class FluentEntityMapper<T> implements EntityMapper<T> {
             return this;
         }
 
-        public Builder<T> withRowKey(String fieldName){
-            rowKeyFieldsName.add(fieldName);
-            return this;
-        }
-
-        public Builder<T> withRowKeySeparator(String separator){
-            this.rowKeySeparator = separator;
+        public Builder<T> withRowKeyGenerator(Function<T,?> rowKeyGenerator){
+            this.rowKeyGenerator = rowKeyGenerator;
             return this;
         }
 
@@ -101,34 +105,12 @@ class FluentEntityMapper<T> implements EntityMapper<T> {
         public FluentEntityMapper<T> build(){
 
             Preconditions.checkArgument(StringUtils.isNotBlank(tableName));
-            Preconditions.checkArgument(rowKeyFieldsName.size() >= 1);
+            Preconditions.checkNotNull(rowKeyGenerator);
             Preconditions.checkArgument(columnFamilies.size()>=1);
 
             this.allFields = ReflectionUtils.getDeclaredAndInheritedFields(clazz);
 
-            final String[] rowKeysCopy = new String[rowKeyFieldsName.size()];
-
-            // copy the list into an array
-            for(int i=0;i<rowKeyFieldsName.size();i++){
-                rowKeysCopy[i] = rowKeyFieldsName.get(i);
-            }
-
-            Arrays.sort(rowKeysCopy);
-
-            rowKeys = new HashMap<String, Field>();
-
             Map<String, Field> map = ReflectionUtils.getDeclaredAndInheritedFieldsMap(clazz);
-
-            for (String rowKey : rowKeyFieldsName) { // check if there are fields that match row keys
-                if (!map.containsKey(rowKey)) {
-                    throw new InvalidMappingException(rowKey + " is not a field");
-                } else {
-                    rowKeys.put(rowKey, map.get(rowKey));
-                }
-            }
-
-            final String[]familiesArray = new String[columnFamilies.size()];
-            final String[]families = columnFamilies.toArray(familiesArray);
 
             columns = new HashMap<Column, Field>();
 
@@ -161,40 +143,6 @@ class FluentEntityMapper<T> implements EntityMapper<T> {
                     columns.put(column,map.get(field));
                 }
             }
-            this.table = new Table(){
-
-                @Override
-                public Class<? extends Annotation> annotationType() {
-                    return Table.class;
-                }
-
-                @Override
-                public String name() {
-                    return tableName;
-                }
-
-                @Override
-                public String[] rowKey() {
-                    return rowKeysCopy;
-                }
-
-                @Override
-                public String rowKeySeparator() {
-                    if(rowKeySeparator==null){
-                        try {
-                            return  (String)Table.class.getMethod("rowKeySeparator").getDefaultValue();
-                        } catch (NoSuchMethodException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                    return rowKeySeparator;
-                }
-
-                @Override
-                public String[] columnFamilies() {
-                    return families;
-                }
-            };
 
             return new FluentEntityMapper<T>(this);
         }

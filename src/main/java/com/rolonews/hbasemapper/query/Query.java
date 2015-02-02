@@ -4,11 +4,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
-import com.rolonews.hbasemapper.AnnotationEntityMapper;
-import com.rolonews.hbasemapper.EntityMapper;
+import com.rolonews.hbasemapper.*;
 import com.rolonews.hbasemapper.annotations.Column;
-import com.rolonews.hbasemapper.BasicObjectSerializer;
-import com.rolonews.hbasemapper.ObjectSerializer;
 import com.rolonews.hbasemapper.exceptions.ColumnNotMappedException;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.filter.*;
@@ -59,7 +56,7 @@ public class Query<T> implements IQuery<T>{
             this.scanner = new Scan();
             this.filterList = new FilterList();
             this.serializer = new BasicObjectSerializer();
-            this.typeInfo = AnnotationEntityMapper.getOrRegisterAnnotationEntityMapper(clazz);
+            this.typeInfo = MappingRegistry.registerIfAbsent(clazz);
 
         }
 

@@ -1,13 +1,12 @@
 package com.rolonews.hbasemapper;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by Sleiman on 25/01/2015.
  */
 
-class MappingRegistry{
+public class MappingRegistry{
 
     private static final ConcurrentHashMap<Class<?>,EntityMapper<?>> mappedEntities = new ConcurrentHashMap<Class<?>, EntityMapper<?>>();
 
@@ -20,7 +19,7 @@ class MappingRegistry{
     }
 
     public static <T> EntityMapper<T> registerIfAbsent(Class<T> clazz){
-        mappedEntities.putIfAbsent(clazz,AnnotationEntityMapper.register(clazz));
+        mappedEntities.putIfAbsent(clazz,AnnotationEntityMapper.createAnnotationMapping(clazz));
         return getMapping(clazz);
     }
 }

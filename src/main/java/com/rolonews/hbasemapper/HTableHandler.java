@@ -1,5 +1,6 @@
 package com.rolonews.hbasemapper;
 
+import com.google.common.base.Preconditions;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
@@ -27,17 +28,15 @@ public class HTableHandler {
     }
 
     public HTableInterface getOrCreateHTable(EntityMapper<?> mapper){
-        TableName tableName = TableName.valueOf(mapper.table().name());
+        Preconditions.checkNotNull(mapper);
+
+        TableName tableName = mapper.tableDescriptor().getTableName();
         try {
             if (!connection.isTableAvailable(tableName)) {
-                HTableDescriptor tableDescriptor = new HTableDescriptor(tableName);
-                for (String family : mapper.table().columnFamilies()) {
-                    tableDescriptor.addFamily(new HColumnDescriptor(family));
-                }
 
                 LOG.debug(String.format("%s table does not exit, so we creating it",tableName.toString()));
                 HBaseAdmin admin = new HBaseAdmin(connection.getConfiguration());
-                admin.createTable(tableDescriptor);
+                admin.createTable(mapper.tableDescriptor());
             }
             HTableInterface table = connection.getTable(tableName);
             return table;
@@ -51,7 +50,8 @@ public class HTableHandler {
         EntityMapper<?> mapper = MappingRegistry.getMapping(clazz); //AnnotationEntityMapper.getOrRegisterAnnotationEntityMapper(clazz);
 
         if(mapper==null){
-
+           mapper =  AnnotationEntityMapper.createAnnotationMapping(clazz);
+           MappingRegistry.register(mapper);
         }
         return getOrCreateHTable(mapper);
     }

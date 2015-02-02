@@ -4,13 +4,9 @@ import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.rolonews.hbasemapper.annotations.Column;
-import com.rolonews.hbasemapper.annotations.Table;
 import com.rolonews.hbasemapper.query.IQuery;
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
 
@@ -92,16 +88,15 @@ public class BasicDataStore implements DataStore {
     @Override
     public <K, T> Optional<T> get(K key, Class<T> clazz) {
         Preconditions.checkNotNull(key);
-        EntityMapper<?> typeInfo = MappingRegistry.registerIfAbsent(clazz);
+        EntityMapper<?> mapper = MappingRegistry.registerIfAbsent(clazz);
         byte[]rowKey = getSerializer(key).serialize(key);
         try {
 
-            Table tableInfo = typeInfo.table();
-            HTableInterface tableInterface =  connection.getTable(tableInfo.name());
+            HTableInterface tableInterface =  connection.getTable(mapper.tableDescriptor().getNameAsString());
 
             Get get = new Get(rowKey);
 
-            Set<Column> columns = typeInfo.columns().keySet();
+            Set<Column> columns = mapper.columns().keySet();
 
             for(Column column: columns){
                 get.addColumn(Bytes.toBytes(column.family()),Bytes.toBytes(column.qualifier()));
@@ -175,35 +170,14 @@ public class BasicDataStore implements DataStore {
         return results;
     }
 
-    private byte[]rowKey(final Object object){
+    private <T> byte[]rowKey(final T object){
         byte[]rowKeyBuffer;
-        try {
-            EntityMapper<?> typeInfo = MappingRegistry.registerIfAbsent(object.getClass());
-            if (typeInfo.rowKeys().size() == 1) {
-                Collection<Field> rowKeys = typeInfo.rowKeys().values();
-                Field rowField = Iterables.getLast(rowKeys);
-                rowField.setAccessible(true);
-                Object rowFieldValue = rowField.get(object);
-                rowKeyBuffer = getSerializer(rowFieldValue).serialize(rowFieldValue);
-            } else {
-                Collection<Object> rowkeyObjects = Collections2.transform(typeInfo.rowKeys().values(), new Function<Field, Object>() {
-                    @Nullable
-                    @Override
-                    public Object apply(Field field) {
-                        field.setAccessible(true);
-                        try {
-                            return field.get(object);
-                        } catch (IllegalAccessException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                });
-                String rowKeyStringValue = StringUtils.join(rowkeyObjects, typeInfo.table().rowKeySeparator());
-                rowKeyBuffer = getSerializer(rowKeyStringValue).serialize(rowKeyStringValue);
-            }
-        }catch (IllegalAccessException e){
-            throw new RuntimeException(e);
-        }
+
+        EntityMapper<T> mapper = MappingRegistry.registerIfAbsent((Class<T>) object.getClass());
+        Function<T, ?> rowKeyGenerator =  mapper.rowKeyGenerator();
+        Object rowKey = rowKeyGenerator.apply(object);
+
+        rowKeyBuffer = getSerializer(rowKey).serialize(rowKey);
         return rowKeyBuffer;
     }
 
@@ -260,10 +234,10 @@ public class BasicDataStore implements DataStore {
     }
 
     private void operateOnTable(Consumer<HTableInterface> tableInterfaceConsumer, Class<?> clazz){
-        EntityMapper<?> typeInfo = AnnotationEntityMapper.getOrRegisterAnnotationEntityMapper(clazz);
+        EntityMapper<?> mapper = MappingRegistry.registerIfAbsent(clazz);
         HTableInterface table = null;
         try {
-            table = new HTableHandler(connection).getOrCreateHTable(typeInfo);
+            table = new HTableHandler(connection).getOrCreateHTable(mapper);
             tableInterfaceConsumer.consume(table);
         }finally {
             if(table != null){

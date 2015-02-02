@@ -34,7 +34,7 @@ public class HResultParser<T> implements ResultParser<T> {
     public T valueOf(Result result) {
         Preconditions.checkNotNull(result);
 
-        EntityMapper<?> typeInfo = AnnotationEntityMapper.getOrRegisterAnnotationEntityMapper(clazz);
+        EntityMapper<?> typeInfo = MappingRegistry.registerIfAbsent(clazz);
 
         try {
             T object = instanceCreator.isPresent() ? instanceCreator.get().get() : clazz.newInstance();
@@ -52,30 +52,6 @@ public class HResultParser<T> implements ResultParser<T> {
                     field.setAccessible(true);
                     Object desrializedBuffer = serializer.deserialize(resultBuffer, field.getType());
                     field.set(object, desrializedBuffer);
-                }
-
-            }
-            byte[]resultRowKey = result.getRow();
-            Map<String,Field> rowKeyMap = typeInfo.rowKeys();
-
-            if(rowKeyMap.size() == 1){
-                Field rowField =  (Field)rowKeyMap.values().toArray()[0];
-                rowField.setAccessible(true);
-                Object rowObject = serializer.deserialize(resultRowKey,rowField.getType());
-                rowField.set(object,rowObject);
-            }else{
-                String rowAsString = Bytes.toString(resultRowKey);
-                String[] rowkeyStructure = typeInfo.table().rowKey();
-                String []rowSplit = rowAsString.split(Pattern.quote(typeInfo.table().rowKeySeparator()));
-
-                for (int i=0;i<rowkeyStructure.length;i++) {
-
-                    Field keyPartField = rowKeyMap.get(rowkeyStructure[i]);
-                    keyPartField.setAccessible(true);
-                    String split = rowSplit[i];
-
-                    Object keyPartAsObject = StringConverter.convert(keyPartField.getType(),split);
-                    keyPartField.set(object,keyPartAsObject);
                 }
 
             }
