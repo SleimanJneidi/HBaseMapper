@@ -1,13 +1,16 @@
 package com.rolonews.hbasemapper;
 
+import com.google.common.base.Function;
 import com.rolonews.hbasemapper.annotations.Column;
 import com.rolonews.hbasemapper.annotations.Table;
+
+import javax.annotation.Nullable;
 
 /**
  *
  * Created by Sleiman on 13/12/2014.
  */
-@Table(name = "FooTrial", rowKey = {"id","name"}, columnFamilies = {"info"}, rowKeySeparator = "_")
+@Table(name = "FooTrial", columnFamilies = {"info"}, rowKeyGenerator = FooKeyGen.class)
 public class Foo{
 
     private int id;
@@ -65,5 +68,13 @@ public class Foo{
                 ", name='" + name + '\'' +
                 ", job='" + job + '\'' +
                 '}';
+    }
+}
+class FooKeyGen implements Function<Foo,String>{
+
+    @Override
+    public String apply(Foo foo) {
+
+        return foo.getId()+"_"+foo.getName();
     }
 }

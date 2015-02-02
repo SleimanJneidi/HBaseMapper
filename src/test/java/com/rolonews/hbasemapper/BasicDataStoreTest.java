@@ -196,11 +196,11 @@ public class BasicDataStoreTest extends BaseTest {
     }
 
 
-    @Table(name = "Person", rowKey = {"id"}, columnFamilies = {"info"})
+    @Table(name = "Person", columnFamilies = {"info"}, rowKeyGenerator = PersonRowKeyGenerator.class )
     @HValidate(validator = PersonValidator.class)
     class Person {
 
-        private String id;
+        public String id;
 
         @Column(family = "info", qualifier = "name")
         public String name;
@@ -209,6 +209,14 @@ public class BasicDataStoreTest extends BaseTest {
         public int age;
 
 
+    }
+
+    class PersonRowKeyGenerator implements Function<Person,String>{
+
+        @Override
+        public String apply(Person person) {
+            return person.id;
+        }
     }
 
 }

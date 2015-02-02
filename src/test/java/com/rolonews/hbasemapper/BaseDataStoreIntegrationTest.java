@@ -102,7 +102,6 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
 
         Foo foo1 = dataStore.get("1_Sleiman", Foo.class).get();
 
-        assertEquals(foo.getId(), foo1.getId());
         assertEquals(foo.getName(), foo1.getName());
         assertEquals(foo.getJob(), foo1.getJob());
         assertEquals(foo.getAge(), foo1.getAge());
@@ -180,7 +179,6 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
 
         for (Foo result : results) {
             assertEquals("Programmer",result.getJob());
-            assertEquals(1,result.getId());
         }
     }
 
