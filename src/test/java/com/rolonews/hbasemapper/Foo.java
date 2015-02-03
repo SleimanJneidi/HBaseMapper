@@ -56,7 +56,10 @@ public class Foo{
         this.job = job;
     }
 
-    public Foo(){
+    public static Foo getInstance(){
+        return new Foo();
+    }
+    private Foo(){
 
     }
 
