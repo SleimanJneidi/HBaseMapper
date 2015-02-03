@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
 /**
- * Created by sleimanjneidi on 24/01/2015.
+ * Created by Sleiman on 24/01/2015.
  */
 public class SerializationFactory {
 

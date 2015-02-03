@@ -31,10 +31,10 @@ public class BasicDataStore implements DataStore {
     }
 
     @Override
-    public<T> void put(final T object) {
+    public<T> void put(final T object,Class<T> clazz) {
         Preconditions.checkNotNull(object);
 
-        byte[]rowKeyBuffer = rowKey(object);
+        byte[]rowKeyBuffer = rowKey(clazz, object);
         Put put = createPut(rowKeyBuffer,object);
         insert(Arrays.asList(put),object.getClass());
     }
@@ -48,7 +48,7 @@ public class BasicDataStore implements DataStore {
 
         List<Put> puts = new ArrayList<Put>();
         for(T object: objects){
-            byte[]rowKey = rowKey(object);
+            byte[]rowKey = rowKey(clazz,object);
             Put put = createPut(rowKey,object);
             puts.add(put);
         }
@@ -170,10 +170,10 @@ public class BasicDataStore implements DataStore {
         return results;
     }
 
-    private <T> byte[]rowKey(final T object){
+    private <T> byte[]rowKey(Class<T> clazz, final T object){
         byte[]rowKeyBuffer;
 
-        EntityMapper<T> mapper = MappingRegistry.registerIfAbsent((Class<T>) object.getClass());
+        EntityMapper<T> mapper = MappingRegistry.registerIfAbsent(clazz);
         Function<T, ?> rowKeyGenerator =  mapper.rowKeyGenerator();
         Object rowKey = rowKeyGenerator.apply(object);
 

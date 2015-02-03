@@ -13,7 +13,7 @@ import java.util.List;
  */
 public interface DataStore {
 
-    public <T> void put(T object);
+    public <T> void put(T object, Class<T> clazz);
 
     public <T> void put(List<T> objects,Class<T> clazz);
 
