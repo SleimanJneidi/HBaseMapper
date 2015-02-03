@@ -1,6 +1,7 @@
 package com.rolonews.hbasemapper;
 
 import com.google.common.base.Optional;
+import com.google.common.base.Stopwatch;
 import com.google.common.base.Supplier;
 
 import com.rolonews.hbasemapper.exceptions.ColumnNotMappedException;
@@ -15,6 +16,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -45,15 +47,12 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
             table.delete(deletes);
             table.close();
         }
-        HBaseAdmin admin = new HBaseAdmin(connection.getConfiguration());
-        admin.disableTable("FooTrial");
-        admin.deleteTable("FooTrial");
     }
 
     @Test
     public void testCanPutObjects() throws Exception{
 
-        DataStore dataStore = DataStoreFactory.getDataStore(connection);
+        DataStore<Foo> dataStore = DataStoreFactory.getDataStore(Foo.class,connection);
 
 
         Foo foo = new Foo();
@@ -68,13 +67,13 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
         foo1.setAge(12);
         foo1.setJob("Jobless");
 
-        dataStore.put(Arrays.asList(foo,foo1),Foo.class);
+        dataStore.put(Arrays.asList(foo,foo1));
         assertEquals(2,rowCount(connection.getTable("FooTrial"),"info"));
     }
 
     @Test
     public void testCanParseResultFromType() throws Exception {
-        DataStore dataStore = DataStoreFactory.getDataStore(connection);
+        DataStore<Foo> dataStore = DataStoreFactory.getDataStore(Foo.class,connection);
 
         Foo foo = new Foo();
         foo.setId(1);
@@ -82,7 +81,7 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
         foo.setAge(12);
         foo.setJob("Jobless");
 
-        dataStore.put(foo, Foo.class);
+        dataStore.put(foo);
 
         Result result = connection.getTable("FooTrial").get(new Get(Bytes.toBytes("1_Sleiman")));
 
@@ -107,7 +106,7 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
     @Test
     public void testCanGetObjectByKey() throws Exception {
 
-        DataStore dataStore = DataStoreFactory.getDataStore(connection);
+        DataStore<Foo> dataStore = DataStoreFactory.getDataStore(Foo.class,connection);
 
         Foo foo = new Foo();
         foo.setId(1);
@@ -115,9 +114,9 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
         foo.setAge(12);
         foo.setJob("Jobless");
 
-        dataStore.put(foo,Foo.class);
+        dataStore.put(foo);
 
-        Foo foo1 = dataStore.get("1_Sleiman", Foo.class).get();
+        Foo foo1 = dataStore.get("1_Sleiman").get();
 
         assertEquals(foo.getName(), foo1.getName());
         assertEquals(foo.getJob(), foo1.getJob());
@@ -127,7 +126,7 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
 
     @Test
     public void testCanDeleteObjectByKey() throws Throwable {
-        DataStore dataStore = DataStoreFactory.getDataStore(connection);
+        DataStore<Foo> dataStore = DataStoreFactory.getDataStore(Foo.class,connection);
 
 
         // put some data first
@@ -143,15 +142,15 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
         foo1.setAge(12);
         foo1.setJob("Jobless");
 
-        dataStore.put(foo,Foo.class);
-        dataStore.put(foo1, Foo.class);
+        dataStore.put(foo);
+        dataStore.put(foo1);
 
         HTableInterface tableInterface = connection.getTable("FooTrial");
         int rowCount = rowCount(tableInterface, "info");
 
         assertEquals(2, rowCount);
 
-        dataStore.delete("1_Sleiman", Foo.class);
+        dataStore.delete("1_Sleiman");
 
         rowCount = rowCount(tableInterface, "info");
         assertEquals(1, rowCount);
@@ -161,20 +160,20 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
     @Test
     public void testQueryByRowPrefix(){
         List<Foo> someFoos = getSomeFoos();
-        DataStore dataStore = DataStoreFactory.getDataStore(connection);
-        dataStore.put(someFoos,Foo.class);
 
+        DataStore<Foo> dataStore = DataStoreFactory.getDataStore(Foo.class,connection);
+
+        dataStore.put(someFoos);
         Query<Foo> queryBuilder =  Query.builder(Foo.class).rowKeyPrefix("1_").build();
         List<Foo> results = dataStore.get(queryBuilder);
-
         assertTrue(results.size()==2);
     }
 
     @Test
     public void testQueryByEquals(){
         List<Foo> someFoos = getSomeFoos();
-        DataStore dataStore = DataStoreFactory.getDataStore(connection);
-        dataStore.put(someFoos,Foo.class);
+        DataStore<Foo> dataStore = DataStoreFactory.getDataStore(Foo.class,connection);
+        dataStore.put(someFoos);
 
         Query<Foo> queryBuilder =  Query.builder(Foo.class).equals("age", 12).build();
         List<Foo> results = dataStore.get(queryBuilder);
@@ -187,8 +186,8 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
     @Test
     public void testQueryCombination(){
         List<Foo> someFoos = getSomeFoos();
-        DataStore dataStore = DataStoreFactory.getDataStore(connection);
-        dataStore.put(someFoos,Foo.class);
+        DataStore<Foo> dataStore = DataStoreFactory.getDataStore(Foo.class,connection);
+        dataStore.put(someFoos);
 
         Query<Foo> queryBuilder =  Query.builder(Foo.class).rowKeyPrefix("1_").equals("job", "Programmer")
                 .build();
@@ -202,8 +201,8 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
     @Test(expected = ColumnNotMappedException.class)
     public void testShouldThrowExceptionIfFieldDoesNotExist(){
         List<Foo> someFoos = getSomeFoos();
-        DataStore dataStore = DataStoreFactory.getDataStore(connection);
-        dataStore.put(someFoos,Foo.class);
+        DataStore<Foo> dataStore = DataStoreFactory.getDataStore(Foo.class,connection);
+        dataStore.put(someFoos);
 
         Query<Foo> queryBuilder =  Query.builder(Foo.class).rowKeyPrefix("1_").equals("someStupidField", "Programmer").build();
         List<Foo> results = dataStore.get(queryBuilder);
@@ -218,8 +217,8 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
     public void testQueryCombination1(){
 
         List<Foo> someFoos = getSomeFoos();
-        DataStore dataStore = DataStoreFactory.getDataStore(connection);
-        dataStore.put(someFoos,Foo.class);
+        DataStore<Foo> dataStore = DataStoreFactory.getDataStore(Foo.class,connection);
+        dataStore.put(someFoos);
 
         Query<Foo> queryBuilder =  Query.builder(Foo.class).greaterThanOrEqaul("age", 12).build();
         List<Foo> results = dataStore.get(queryBuilder);

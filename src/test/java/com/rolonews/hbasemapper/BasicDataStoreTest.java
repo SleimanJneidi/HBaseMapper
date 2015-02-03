@@ -59,14 +59,14 @@ public class BasicDataStoreTest extends BaseTest {
     @Test
     public void testPutObject() throws IOException {
 
-        DataStore dataStore = DataStoreFactory.getDataStore(connection);
+        DataStore<Person> dataStore = DataStoreFactory.getDataStore(Person.class,connection);
         Person person = new Person();
         person.id = "someId";
         person.name = "Peter";
         person.age = 13;
 
 
-        dataStore.put(person,Person.class);
+        dataStore.put(person);
         verify(tableInterface).put(putCaptor.capture());
         Put put = putCaptor.getValue().get(0);
 
@@ -79,7 +79,7 @@ public class BasicDataStoreTest extends BaseTest {
 
     @Test
     public void testPutObjectWithKey() throws IOException {
-        DataStore dataStore = DataStoreFactory.getDataStore(connection);
+        DataStore<Person> dataStore = DataStoreFactory.getDataStore(Person.class,connection);
         Person person = new Person();
         person.name = "Peter";
         person.age = 13;
@@ -94,7 +94,7 @@ public class BasicDataStoreTest extends BaseTest {
 
     @Test
     public void testPutBulkObjects() throws IOException {
-        DataStore dataStore = DataStoreFactory.getDataStore(connection);
+        DataStore<Person> dataStore = DataStoreFactory.getDataStore(Person.class,connection);
 
         Person person1 = new Person();
         person1.id = "someId";
@@ -108,7 +108,7 @@ public class BasicDataStoreTest extends BaseTest {
 
         List<BasicDataStoreTest.Person> personsToInsert = Arrays.asList(person1,person2);
 
-        dataStore.put(personsToInsert, BasicDataStoreTest.Person.class);
+        dataStore.put(personsToInsert);
 
         verify(tableInterface).put(putCaptor.capture());
 
@@ -128,7 +128,7 @@ public class BasicDataStoreTest extends BaseTest {
 
     @Test
     public void testPutBulkObjectsWithArbitraryKeys(){
-        DataStore dataStore = DataStoreFactory.getDataStore(connection);
+        DataStore<BasicDataStoreTest.Person> dataStore = DataStoreFactory.getDataStore(BasicDataStoreTest.Person.class,connection);
 
         Person person1 = new Person();
         person1.name = "Peter";
@@ -146,20 +146,20 @@ public class BasicDataStoreTest extends BaseTest {
             }
         };
 
-        dataStore.put(keyFunction,Arrays.asList(person1,person2), BasicDataStoreTest.Person.class);
+        dataStore.put(keyFunction,Arrays.asList(person1,person2));
 
     }
 
     @Test
     public void testDeleteObjects() throws IOException {
-        DataStore dataStore = DataStoreFactory.getDataStore(connection);
+        DataStore<BasicDataStoreTest.Person> dataStore = DataStoreFactory.getDataStore(BasicDataStoreTest.Person.class,connection);
 
         Person person1 = new Person();
         person1.id = "someId";
         person1.name = "Peter";
         person1.age = 13;
 
-        dataStore.delete("someId", BasicDataStoreTest.Person.class);
+        dataStore.delete("someId");
 
         verify(tableInterface).delete(deleteCaptors.capture());
 
@@ -171,7 +171,7 @@ public class BasicDataStoreTest extends BaseTest {
 
     @Test
     public void testBulkDeletes()throws IOException{
-        DataStore dataStore = DataStoreFactory.getDataStore(connection);
+        DataStore<BasicDataStoreTest.Person> dataStore = DataStoreFactory.getDataStore(BasicDataStoreTest.Person.class,connection);
 
         Person person1 = new Person();
         person1.id = "someId";
@@ -184,7 +184,7 @@ public class BasicDataStoreTest extends BaseTest {
         person2.age = 84;
 
         List<BasicDataStoreTest.Person> personsToDelete = Arrays.asList(person1,person2);
-        dataStore.delete(Arrays.asList("someId","someId1"),BasicDataStoreTest.Person.class);
+        dataStore.delete(Arrays.asList("someId","someId1"));
 
         verify(tableInterface).delete(deleteCaptors.capture());
         List<Delete> capturedDeletes = deleteCaptors.getValue();

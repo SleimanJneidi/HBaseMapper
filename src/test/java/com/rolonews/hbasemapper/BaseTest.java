@@ -1,5 +1,6 @@
 package com.rolonews.hbasemapper;
 
+import com.google.common.base.Stopwatch;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
 import org.apache.hadoop.hbase.MiniHBaseCluster;
 import org.apache.hadoop.hbase.client.*;
@@ -11,6 +12,7 @@ import org.slf4j.Logger;
 
 import javax.security.auth.login.Configuration;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Sleiman on 11/12/2014.
