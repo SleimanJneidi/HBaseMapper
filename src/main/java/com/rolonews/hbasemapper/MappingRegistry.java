@@ -10,7 +10,8 @@ public class MappingRegistry{
 
     private static final ConcurrentHashMap<Class<?>,EntityMapper<?>> mappedEntities = new ConcurrentHashMap<Class<?>, EntityMapper<?>>();
 
-    public static <T> EntityMapper<T> getMapping(Class<T> clazz){
+    @SuppressWarnings("unchecked")
+	public static <T> EntityMapper<T> getMapping(Class<T> clazz){
         return (EntityMapper<T>)mappedEntities.get(clazz);
     }
 
@@ -18,8 +19,11 @@ public class MappingRegistry{
         mappedEntities.put(mapper.clazz(),mapper);
     }
 
-    public static <T> EntityMapper<T> registerIfAbsent(Class<T> clazz){
-        mappedEntities.putIfAbsent(clazz,AnnotationEntityMapper.createAnnotationMapping(clazz));
-        return getMapping(clazz);
+    @SuppressWarnings("unchecked")
+	public static <T> EntityMapper<T> registerIfAbsent(Class<T> clazz){
+    	if(mappedEntities.containsKey(clazz)){
+    		return getMapping(clazz);
+    	}
+    	return (EntityMapper<T>) mappedEntities.put(clazz, AnnotationEntityMapper.createAnnotationMapping(clazz));
     }
 }

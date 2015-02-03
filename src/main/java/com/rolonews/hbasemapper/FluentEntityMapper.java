@@ -21,7 +21,7 @@ import java.util.*;
  * Created by Sleiman on 25/01/2015.
  */
 
-class FluentEntityMapper<T> implements EntityMapper<T> {
+public class FluentEntityMapper<T> implements EntityMapper<T> {
 
     private final Class<T> clazz;
     private final Map<CellDescriptor, Field> columns;
