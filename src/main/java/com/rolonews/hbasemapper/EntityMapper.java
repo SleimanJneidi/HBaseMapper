@@ -2,6 +2,7 @@ package com.rolonews.hbasemapper;
 
 import com.google.common.base.Function;
 import com.rolonews.hbasemapper.annotations.Column;
+import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.HTableDescriptor;
 
 import java.lang.reflect.Field;
@@ -14,5 +15,5 @@ public interface EntityMapper<T>{
     Class<T> clazz();
     HTableDescriptor tableDescriptor();
     Function<T,?> rowKeyGenerator();
-    Map<Column,Field> columns();
+    Map<CellDescriptor,Field> columns();
 }

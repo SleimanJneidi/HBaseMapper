@@ -21,17 +21,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class AnnotationEntityMapper<T> implements EntityMapper<T> {
 
     private final Class<T> clazz;
-    private final Map<Column, Field> columns;
-    private final List<HValidate> validators;
     private final HTableDescriptor tableDescriptor;
     private final Function<T,?> rowKeyGenerator;
+    private final Map<CellDescriptor,Field> columns;
 
-    private AnnotationEntityMapper(Class<T> clazz, Table table, Map<Column, Field> columns,
-                                   Map<String, Field> rowKeys, List<HValidate> validators
-                                   ,Function<T,?> rowKeyGenerator) {
+    private AnnotationEntityMapper(Class<T> clazz, Table table, Map<CellDescriptor, Field> columns,Function<T,?> rowKeyGenerator) {
         this.clazz = clazz;
         this.columns = columns;
-        this.validators = validators;
         this.rowKeyGenerator = rowKeyGenerator;
         this.tableDescriptor = new HTableDescriptor(TableName.valueOf(table.name()));
         for (String family : table.columnFamilies()) {
@@ -44,9 +40,7 @@ public final class AnnotationEntityMapper<T> implements EntityMapper<T> {
         Table tableAnnotation = getTable(clazz);
 
         List<Field> allFields = ReflectionUtils.getDeclaredAndInheritedFields(clazz);
-        Map<Column, Field> columns = new HashMap<Column, Field>();
-        Map<String, Field> rowKeysFields = new HashMap<String, Field>();
-
+        Map<CellDescriptor, Field> columns = new HashMap<CellDescriptor, Field>();
 
         Set<String> families = new HashSet<String>(Arrays.asList(tableAnnotation.columnFamilies()));
 
@@ -58,7 +52,8 @@ public final class AnnotationEntityMapper<T> implements EntityMapper<T> {
                     throw new InvalidMappingException(String.format("Column family %s does not exist, make sure that your class is "
                             + "annotated properly", family));
                 }
-                columns.put(column, field);
+                CellDescriptor cell = new HCellDescriptor(column.family(),column.qualifier());
+                columns.put(cell, field);
             }
 
         }
@@ -71,14 +66,13 @@ public final class AnnotationEntityMapper<T> implements EntityMapper<T> {
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
-        // get validator
-        List<HValidate> validators = getDeclaredAndInheritedValidators(clazz);
-        EntityMapper<T> mapper = new AnnotationEntityMapper<T>(clazz, tableAnnotation, columns,
-                rowKeysFields, validators, rowKeyGenerator);
+
+        EntityMapper<T> mapper = new AnnotationEntityMapper<T>(clazz, tableAnnotation, columns,rowKeyGenerator);
+
         return mapper;
     }
 
-
+    /*
     private static List<HValidate> getDeclaredAndInheritedValidators(final Class<?> clazz){
         final List<HValidate> validators = new ArrayList<HValidate>();
         HValidate hValidate =  clazz.getAnnotation(HValidate.class);
@@ -96,6 +90,7 @@ public final class AnnotationEntityMapper<T> implements EntityMapper<T> {
         }
         return validators;
     }
+    */
 
 
     private static Table getTable(Class<?> clazz){
@@ -130,7 +125,7 @@ public final class AnnotationEntityMapper<T> implements EntityMapper<T> {
     }
 
     @Override
-    public Map<Column, Field> columns() {
+    public Map<CellDescriptor, Field> columns() {
         return this.columns;
     }
 }

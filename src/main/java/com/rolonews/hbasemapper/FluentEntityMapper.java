@@ -24,7 +24,7 @@ import java.util.*;
 class FluentEntityMapper<T> implements EntityMapper<T> {
 
     private final Class<T> clazz;
-    private final Map<Column, Field> columns;
+    private final Map<CellDescriptor, Field> columns;
     private final HTableDescriptor tableDescriptor;
     private final Function<T,?> rowKeyGenerator;
 
@@ -45,7 +45,7 @@ class FluentEntityMapper<T> implements EntityMapper<T> {
 
 
     @Override
-    public Map<Column, Field> columns() {
+    public Map<CellDescriptor, Field> columns() {
         return this.columns;
     }
 
@@ -76,8 +76,7 @@ class FluentEntityMapper<T> implements EntityMapper<T> {
 
         private List<Triple<String,String,String>> columnsFields = new ArrayList<Triple<String, String,String>>();
 
-        private Map<String, Field> rowKeys;
-        private Map<Column, Field> columns;
+        private Map<CellDescriptor, Field> columns;
 
         public Builder<T> withTable(String tableName){
             this.tableName = tableName;
@@ -112,35 +111,18 @@ class FluentEntityMapper<T> implements EntityMapper<T> {
 
             Map<String, Field> map = ReflectionUtils.getDeclaredAndInheritedFieldsMap(clazz);
 
-            columns = new HashMap<Column, Field>();
+            columns = new HashMap<CellDescriptor, Field>();
 
             for (Triple<String, String, String> columnsField : columnsFields) {
                 final String family = columnsField.getFirst();
                 final String qualifier = columnsField.getSecond();
                 final String field = columnsField.getThird();
 
-                Column column = new Column(){
-
-                    @Override
-                    public Class<? extends Annotation> annotationType() {
-                        return Column.class;
-                    }
-
-                    @Override
-                    public String family() {
-                        return family;
-                    }
-
-                    @Override
-                    public String qualifier() {
-                        return qualifier;
-                    }
-                };
 
                 if(!map.containsKey(field)){
                     throw new InvalidMappingException(field + " is not a field");
                 }else{
-                    columns.put(column,map.get(field));
+                    columns.put(new HCellDescriptor(family,qualifier),map.get(field));
                 }
             }
 

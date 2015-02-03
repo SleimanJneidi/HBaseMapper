@@ -165,9 +165,9 @@ public class Query<T> implements IQuery<T>{
 
         private Pair<byte[], byte[]> getColumnByFieldName(final String field, EntityMapper<?> typeInfo) {
 
-            Map<Column, Field> columnFieldMap = Maps.filterKeys(typeInfo.columns(), new Predicate<Column>() {
+            Map<CellDescriptor, Field> columnFieldMap = Maps.filterKeys(typeInfo.columns(), new Predicate<CellDescriptor>() {
                 @Override
-                public boolean apply(Column column) {
+                public boolean apply(CellDescriptor column) {
                     return column.qualifier().equals(field);
                 }
             });
@@ -175,7 +175,7 @@ public class Query<T> implements IQuery<T>{
             if (columnFieldMap.size() == 0) {
                 throw new ColumnNotMappedException("field of name " + field + "is not mapped, make sure you map your entity properly");
             }
-            Column column = Iterables.getLast(columnFieldMap.keySet());
+            CellDescriptor column = Iterables.getLast(columnFieldMap.keySet());
             return new Pair<byte[], byte[]>(Bytes.toBytes(column.family()), Bytes.toBytes(column.qualifier()));
         }
 

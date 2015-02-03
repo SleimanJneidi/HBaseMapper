@@ -5,7 +5,6 @@ import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Lists;
-import com.rolonews.hbasemapper.annotations.Column;
 import com.rolonews.hbasemapper.query.IQuery;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -96,9 +95,9 @@ public class BasicDataStore implements DataStore {
 
             Get get = new Get(rowKey);
 
-            Set<Column> columns = mapper.columns().keySet();
+            Set<CellDescriptor> columns = mapper.columns().keySet();
 
-            for(Column column: columns){
+            for(CellDescriptor column: columns){
                 get.addColumn(Bytes.toBytes(column.family()),Bytes.toBytes(column.qualifier()));
             }
 
@@ -184,10 +183,10 @@ public class BasicDataStore implements DataStore {
     private Put createPut(final byte[] rowKey,final Object object){
         try {
             Put put = new Put(rowKey);
-            Map<Column, Field> columns = MappingRegistry.registerIfAbsent(object.getClass()).columns();
-            for (Map.Entry<Column, Field> columnFieldEntry : columns.entrySet()) {
+            Map<CellDescriptor, Field> columns = MappingRegistry.registerIfAbsent(object.getClass()).columns();
+            for (Map.Entry<CellDescriptor, Field> columnFieldEntry : columns.entrySet()) {
                 Field field = columnFieldEntry.getValue();
-                Column column = columnFieldEntry.getKey();
+                CellDescriptor column = columnFieldEntry.getKey();
                 field.setAccessible(true);
                 Object fieldValue = field.get(object);
                 if (fieldValue != null) {

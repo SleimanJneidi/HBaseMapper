@@ -41,7 +41,7 @@ public class HResultParser<T> implements ResultParser<T> {
 
             ObjectSerializer serializer = new BasicObjectSerializer();
 
-            for (Column mColumn : typeInfo.columns().keySet()) {
+            for (CellDescriptor mColumn : typeInfo.columns().keySet()) {
 
                 byte[] familyBuffer = Bytes.toBytes(mColumn.family());
                 byte[] qualifierBuffer = Bytes.toBytes(mColumn.qualifier());
