@@ -191,7 +191,7 @@ public class BasicDataStore<T> implements DataStore<T> {
     private Put createPut(final byte[] rowKey,final Object object){
         try {
             Put put = new Put(rowKey);
-            Map<CellDescriptor, Field> columns = MappingRegistry.registerIfAbsent(object.getClass()).columns();
+            Map<CellDescriptor, Field> columns = mapper.columns();
             for (Map.Entry<CellDescriptor, Field> columnFieldEntry : columns.entrySet()) {
                 Field field = columnFieldEntry.getValue();
                 CellDescriptor column = columnFieldEntry.getKey();
