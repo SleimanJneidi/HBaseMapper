@@ -9,7 +9,12 @@ import org.apache.hadoop.hbase.client.HConnection;
  */
 public abstract class DataStoreFactory {
 
-    public static DataStore getDataStore(final HConnection connection){
-        return new BasicDataStore(connection);
+    public static <T> DataStore<T> getDataStore(final Class<T> clazz, final HConnection connection){
+        return new BasicDataStore<T>(connection,clazz,null);
     }
+
+    public static <T> DataStore<T> getDataStore(final Class<T> clazz, final HConnection connection, final EntityMapper<T> mapper){
+        return new BasicDataStore<T>(connection,clazz,mapper);
+    }
+
 }

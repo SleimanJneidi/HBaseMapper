@@ -71,7 +71,6 @@ class FluentEntityMapper<T> implements EntityMapper<T> {
         private String tableName;
         private Class<T> clazz;
         private final Set<String> columnFamilies = new HashSet<String>();
-        private List<Field> allFields;
         private Function<T,?> rowKeyGenerator;
 
         private List<Triple<String,String,String>> columnsFields = new ArrayList<Triple<String, String,String>>();
@@ -102,12 +101,9 @@ class FluentEntityMapper<T> implements EntityMapper<T> {
         }
 
         public FluentEntityMapper<T> build(){
-
             Preconditions.checkArgument(StringUtils.isNotBlank(tableName));
             Preconditions.checkNotNull(rowKeyGenerator);
             Preconditions.checkArgument(columnFamilies.size()>=1);
-
-            this.allFields = ReflectionUtils.getDeclaredAndInheritedFields(clazz);
 
             Map<String, Field> map = ReflectionUtils.getDeclaredAndInheritedFieldsMap(clazz);
 

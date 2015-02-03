@@ -9,7 +9,6 @@ import com.rolonews.hbasemapper.query.IQuery;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
@@ -20,53 +19,64 @@ import static com.rolonews.hbasemapper.SerializationFactory.*;
  * Created by Sleiman on 10/12/2014.
  *
  */
-public class BasicDataStore implements DataStore {
+public class BasicDataStore<T> implements DataStore<T> {
 
 
     private final HConnection connection;
+    private final Class<T> clazz;
+    private final EntityMapper<T> mapper;
 
-    protected BasicDataStore(final HConnection connection) {
+    protected BasicDataStore(final HConnection connection, final Class<T> clazz, final EntityMapper<T> mapper) {
+        Preconditions.checkNotNull(connection);
+        Preconditions.checkNotNull(clazz);
+
         this.connection = connection;
+        this.clazz = clazz;
+
+        if(mapper == null){
+            this.mapper = MappingRegistry.registerIfAbsent(clazz);
+        }else{
+            this.mapper = mapper;
+        }
     }
 
     @Override
-    public<T> void put(final T object,Class<T> clazz) {
+    public void put(final T object) {
         Preconditions.checkNotNull(object);
 
-        byte[]rowKeyBuffer = rowKey(clazz, object);
+        byte[]rowKeyBuffer = rowKey(object);
         Put put = createPut(rowKeyBuffer,object);
-        insert(Arrays.asList(put),object.getClass());
+        insert(Arrays.asList(put));
     }
 
 
     @Override
-    public <T> void put(List<T> objects, Class<T> clazz) {
+    public void put(List<T> objects) {
         Preconditions.checkNotNull(objects);
         Preconditions.checkArgument(objects.size()>=1);
-        Preconditions.checkNotNull(clazz);
 
         List<Put> puts = new ArrayList<Put>();
         for(T object: objects){
-            byte[]rowKey = rowKey(clazz,object);
+            byte[]rowKey = rowKey(object);
             Put put = createPut(rowKey,object);
             puts.add(put);
         }
-        insert(puts, clazz);
+        insert(puts);
     }
 
     @Override
-    public void put(Object key, Object object) {
+    public void put(Object key, T object) {
         Preconditions.checkNotNull(key);
         Preconditions.checkNotNull(object);
 
         byte[]rowKey = getSerializer(key).serialize(key);
         Put put = createPut(rowKey,object);
 
-        insert(Arrays.asList(put),object.getClass());
+        insert(Arrays.asList(put));
     }
 
     @Override
-    public <K, T> void put(Function<T, K> rowKeyFunction, List<T> objects, Class<T> clazz) {
+    public <K> void put(Function<T, K> rowKeyFunction, List<T> objects) {
         Preconditions.checkNotNull(objects);
         Preconditions.checkArgument(objects.size()>=1);
 
@@ -81,13 +91,12 @@ public class BasicDataStore implements DataStore {
             Put put = createPut(rowKey,object);
             puts.add(put);
         }
-        insert(puts, clazz);
+        insert(puts);
     }
 
     @Override
-    public <K, T> Optional<T> get(K key, Class<T> clazz) {
+    public <K> Optional<T> get(K key) {
         Preconditions.checkNotNull(key);
-        EntityMapper<?> mapper = MappingRegistry.registerIfAbsent(clazz);
         byte[]rowKey = getSerializer(key).serialize(key);
         try {
 
@@ -115,35 +124,34 @@ public class BasicDataStore implements DataStore {
     }
 
     @Override
-    public void delete(Object key, Class<?> clazz) {
+    public void delete(Object key) {
         Preconditions.checkNotNull(key);
         Preconditions.checkNotNull(clazz);
 
         byte[]rowKey = getSerializer(key).serialize(key);
         Delete delete = new Delete(rowKey);
-        deleteObjects(new ArrayList<Delete>(Arrays.asList(delete)), clazz);
+        deleteObjects(new ArrayList<Delete>(Arrays.asList(delete)));
     }
 
     @Override
-    public void delete(List<?> keys, Class<?> clazz) {
+    public void delete(List<?> keys) {
         Preconditions.checkNotNull(keys);
         Preconditions.checkNotNull(clazz);
 
         List<Delete> deletes = Lists.transform(keys, new Function<Object, Delete>() {
 
-            @Nullable
             @Override
-            public Delete apply(@Nullable Object key) {
+            public Delete apply(Object key) {
                 byte[] row = getSerializer(key).serialize(key);
                 return new Delete(row);
             }
         });
-        deleteObjects(deletes,clazz);
+        deleteObjects(deletes);
 
     }
 
     @Override
-    public <T> List<T> get(final IQuery<T> queryBuilder) {
+    public List<T> get(final IQuery<T> queryBuilder) {
         Preconditions.checkNotNull(queryBuilder);
         final Scan scan = queryBuilder.getScanner();
         final List<T> results = new ArrayList<T>();
@@ -164,15 +172,15 @@ public class BasicDataStore implements DataStore {
             }
         };
 
-        operateOnTable(applyScan,queryBuilder.getType());
+        operateOnTable(applyScan);
 
         return results;
     }
 
-    private <T> byte[]rowKey(Class<T> clazz, final T object){
-        byte[]rowKeyBuffer;
 
-        EntityMapper<T> mapper = MappingRegistry.registerIfAbsent(clazz);
+    private byte[]rowKey(final T object){
+
+        byte[]rowKeyBuffer;
         Function<T, ?> rowKeyGenerator =  mapper.rowKeyGenerator();
         Object rowKey = rowKeyGenerator.apply(object);
 
@@ -202,7 +210,7 @@ public class BasicDataStore implements DataStore {
 
     }
 
-    private void deleteObjects(final List<Delete> deletes,Class<?> clazz){
+    private void deleteObjects(final List<Delete> deletes){
 
         Consumer<HTableInterface> deleteOperations = new Consumer<HTableInterface>() {
             @Override
@@ -214,10 +222,10 @@ public class BasicDataStore implements DataStore {
                 }
             }
         };
-        operateOnTable(deleteOperations,clazz);
+        operateOnTable(deleteOperations);
     }
 
-    private void insert(final List<Put> puts,Class<?> clazz){
+    private void insert(final List<Put> puts){
 
             Consumer<HTableInterface> putOperations = new Consumer<HTableInterface>() {
                 @Override
@@ -229,11 +237,10 @@ public class BasicDataStore implements DataStore {
                     }
                 }
             };
-        operateOnTable(putOperations,clazz);
+        operateOnTable(putOperations);
     }
 
-    private void operateOnTable(Consumer<HTableInterface> tableInterfaceConsumer, Class<?> clazz){
-        EntityMapper<?> mapper = MappingRegistry.registerIfAbsent(clazz);
+    private void operateOnTable(Consumer<HTableInterface> tableInterfaceConsumer){
         HTableInterface table = null;
         try {
             table = new HTableHandler(connection).getOrCreateHTable(mapper);
@@ -248,4 +255,10 @@ public class BasicDataStore implements DataStore {
             }
         }
     }
+
+    @Override
+    public EntityMapper<T> mapper() {
+        return this.mapper;
+    }
+
 }

@@ -11,22 +11,23 @@ import java.util.List;
  * Created by Sleiman on 09/12/2014.
  *
  */
-public interface DataStore {
+public interface DataStore<T> {
 
-    public <T> void put(T object, Class<T> clazz);
+    public void put(T object);
 
-    public <T> void put(List<T> objects,Class<T> clazz);
+    public void put(List<T> objects);
 
-    public void put(Object key,Object object);
+    public void put(Object key,T object);
 
-    public <K,T> void put(Function<T,K> rowKeyFunction, List<T> objects, Class<T> clazz);
+    public <K> void put(Function<T,K> rowKeyFunction, List<T> objects);
 
-    public <K,T> Optional<T> get(K key, Class<T> clazz);
+    public <K> Optional<T> get(K key);
 
-    public void delete(Object key,Class<?> clazz);
+    public void delete(Object key);
 
-    public void delete(List<?> keys,Class<?> clazz);
+    public void delete(List<?> keys);
 
-    public <T> List<T> get(IQuery<T> query);
+    public List<T> get(IQuery<T> query);
 
+    public EntityMapper<T> mapper();
 }
