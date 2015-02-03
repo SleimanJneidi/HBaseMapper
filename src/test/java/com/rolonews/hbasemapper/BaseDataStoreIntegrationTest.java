@@ -5,6 +5,7 @@ import com.google.common.base.Supplier;
 
 import com.rolonews.hbasemapper.exceptions.ColumnNotMappedException;
 import com.rolonews.hbasemapper.query.Query;
+import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.After;
@@ -28,6 +29,22 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
 
     @After
     public void tearDown() throws IOException {
+
+        if(connection.isTableAvailable(TableName.valueOf("FooTrial"))){
+            HTableInterface table = connection.getTable("FooTrial");
+            // truncate the table
+            List<Delete> deletes = new ArrayList<Delete>();
+            Scan scan = new Scan();
+            ResultScanner resultScanner = table.getScanner(scan);
+            for(Result result: resultScanner){
+                byte[] row = result.getRow();
+                Delete delete = new Delete(row);
+                deletes.add(delete);
+            }
+            resultScanner.close();
+            table.delete(deletes);
+            table.close();
+        }
         HBaseAdmin admin = new HBaseAdmin(connection.getConfiguration());
         admin.disableTable("FooTrial");
         admin.deleteTable("FooTrial");
@@ -65,7 +82,7 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
         foo.setAge(12);
         foo.setJob("Jobless");
 
-        dataStore.put(foo);
+        dataStore.put(foo, Foo.class);
 
         Result result = connection.getTable("FooTrial").get(new Get(Bytes.toBytes("1_Sleiman")));
 
@@ -98,7 +115,7 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
         foo.setAge(12);
         foo.setJob("Jobless");
 
-        dataStore.put(foo);
+        dataStore.put(foo,Foo.class);
 
         Foo foo1 = dataStore.get("1_Sleiman", Foo.class).get();
 
@@ -126,8 +143,8 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
         foo1.setAge(12);
         foo1.setJob("Jobless");
 
-        dataStore.put(foo);
-        dataStore.put(foo1);
+        dataStore.put(foo,Foo.class);
+        dataStore.put(foo1, Foo.class);
 
         HTableInterface tableInterface = connection.getTable("FooTrial");
         int rowCount = rowCount(tableInterface, "info");

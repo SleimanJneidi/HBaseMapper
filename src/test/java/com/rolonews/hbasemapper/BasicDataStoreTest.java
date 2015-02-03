@@ -66,7 +66,7 @@ public class BasicDataStoreTest extends BaseTest {
         person.age = 13;
 
 
-        dataStore.put(person);
+        dataStore.put(person,Person.class);
         verify(tableInterface).put(putCaptor.capture());
         Put put = putCaptor.getValue().get(0);
 
@@ -211,12 +211,13 @@ public class BasicDataStoreTest extends BaseTest {
 
     }
 
-    class PersonRowKeyGenerator implements Function<Person,String>{
 
-        @Override
-        public String apply(Person person) {
-            return person.id;
-        }
+
+}
+class PersonRowKeyGenerator implements Function<BasicDataStoreTest.Person,String>{
+
+    @Override
+    public String apply(BasicDataStoreTest.Person person) {
+        return person.id;
     }
-
 }
