@@ -21,9 +21,9 @@ public class MappingRegistry{
 
     @SuppressWarnings("unchecked")
 	public static <T> EntityMapper<T> registerIfAbsent(Class<T> clazz){
-    	if(mappedEntities.containsKey(clazz)){
-    		return getMapping(clazz);
+    	if(!mappedEntities.containsKey(clazz)){
+            mappedEntities.put(clazz, AnnotationEntityMapper.createAnnotationMapping(clazz));
     	}
-    	return (EntityMapper<T>) mappedEntities.put(clazz, AnnotationEntityMapper.createAnnotationMapping(clazz));
+        return getMapping(clazz);
     }
 }

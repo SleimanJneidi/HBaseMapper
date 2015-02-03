@@ -114,7 +114,7 @@ public class BasicDataStore<T> implements DataStore<T> {
             if(result.getRow()==null){
                 return Optional.absent();
             }else{
-                HResultParser<T> resultParser = new HResultParser<T>(clazz,Optional.<Supplier<T>>absent());
+                HResultParser<T> resultParser = new HResultParser<T>(clazz,mapper,Optional.<Supplier<T>>absent());
                 T object = resultParser.valueOf(result);
                 return Optional.of(object);
             }
@@ -161,7 +161,7 @@ public class BasicDataStore<T> implements DataStore<T> {
             public void consume(HTableInterface hTableInterface) {
                 try {
                     ResultScanner resultScanner =  hTableInterface.getScanner(scan);
-                    HResultParser<T> resultParser = new HResultParser<T>(queryBuilder.getType(),Optional.<Supplier<T>>absent());
+                    HResultParser<T> resultParser = new HResultParser<T>(queryBuilder.getType(),mapper,Optional.<Supplier<T>>absent());
                     for (Result result : resultScanner) {
                         T object = resultParser.valueOf(result);
                         results.add(object);

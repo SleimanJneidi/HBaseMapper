@@ -7,7 +7,9 @@ import com.rolonews.hbasemapper.annotations.Column;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -21,34 +23,44 @@ public class HResultParser<T> implements ResultParser<T> {
 
     private final Optional<Supplier<T>> instanceCreator;
 
+    private final EntityMapper<T> mapper;
 
-    public HResultParser(final Class<T> clazz,final Optional<Supplier<T>> instanceSupplier) {
+    public HResultParser(final Class<T> clazz,
+                         final EntityMapper<T> mapper,
+                         final Optional<Supplier<T>> instanceSupplier) {
         Preconditions.checkNotNull(clazz);
         Preconditions.checkNotNull(instanceSupplier);
 
         this.clazz = clazz;
         this.instanceCreator = instanceSupplier;
+        this.mapper = mapper;
     }
 
     @Override
     public T valueOf(Result result) {
         Preconditions.checkNotNull(result);
 
-        EntityMapper<?> typeInfo = MappingRegistry.registerIfAbsent(clazz);
 
         try {
-            T object = instanceCreator.isPresent() ? instanceCreator.get().get() : clazz.newInstance();
+            T object;
+            if(instanceCreator.isPresent()){
+                object = instanceCreator.get().get();
+            }else{
+                Constructor<T> constructor = clazz.getDeclaredConstructor();
+                constructor.setAccessible(true);
+                object = constructor.newInstance();
+            }
 
             ObjectSerializer serializer = new BasicObjectSerializer();
 
-            for (CellDescriptor mColumn : typeInfo.columns().keySet()) {
+            for (CellDescriptor mColumn : mapper.columns().keySet()) {
 
                 byte[] familyBuffer = Bytes.toBytes(mColumn.family());
                 byte[] qualifierBuffer = Bytes.toBytes(mColumn.qualifier());
                 byte[] resultBuffer = result.getValue(familyBuffer, qualifierBuffer);
 
                 if (resultBuffer != null) {
-                    Field field = typeInfo.columns().get(mColumn);
+                    Field field = mapper.columns().get(mColumn);
                     field.setAccessible(true);
                     Object desrializedBuffer = serializer.deserialize(resultBuffer, field.getType());
                     field.set(object, desrializedBuffer);
@@ -59,6 +71,10 @@ public class HResultParser<T> implements ResultParser<T> {
         } catch (InstantiationException e) {
             throw new RuntimeException(e);
         } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
             throw new RuntimeException(e);
         }
 

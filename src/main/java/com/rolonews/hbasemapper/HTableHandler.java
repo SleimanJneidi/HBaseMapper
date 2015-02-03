@@ -1,8 +1,6 @@
 package com.rolonews.hbasemapper;
 
 import com.google.common.base.Preconditions;
-import org.apache.hadoop.hbase.HColumnDescriptor;
-import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
 import org.slf4j.Logger;
@@ -47,7 +45,7 @@ public class HTableHandler {
     }
 
     public HTableInterface getOrCreateHTable(Class<?> clazz){
-        EntityMapper<?> mapper = MappingRegistry.getMapping(clazz); //AnnotationEntityMapper.getOrRegisterAnnotationEntityMapper(clazz);
+        EntityMapper<?> mapper = MappingRegistry.getMapping(clazz);
 
         if(mapper==null){
            mapper =  AnnotationEntityMapper.createAnnotationMapping(clazz);
