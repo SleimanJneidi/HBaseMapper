@@ -5,7 +5,9 @@ import com.google.common.base.Stopwatch;
 import com.google.common.base.Supplier;
 
 import com.rolonews.hbasemapper.exceptions.ColumnNotMappedException;
+import com.rolonews.hbasemapper.query.IQuery;
 import com.rolonews.hbasemapper.query.Query;
+import com.rolonews.hbasemapper.query.QueryResult;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -69,6 +71,39 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
 
         dataStore.put(Arrays.asList(foo,foo1));
         assertEquals(2,rowCount(connection.getTable("FooTrial"),"info"));
+    }
+
+    @Test
+    public void testQueryWithResult() throws Exception{
+
+        DataStore<Foo> dataStore = DataStoreFactory.getDataStore(Foo.class,connection);
+
+
+        Foo foo = Foo.getInstance();
+        foo.setId(1);
+        foo.setName("Sleiman");
+        foo.setAge(12);
+        foo.setJob("Jobless");
+
+        Foo foo1 = Foo.getInstance();
+        foo1.setId(2);
+        foo1.setName("Sleiman");
+        foo1.setAge(12);
+        foo1.setJob("Jobless");
+
+        dataStore.put(Arrays.asList(foo, foo1));
+
+        IQuery<Foo> query = Query.builder(Foo.class).build();
+
+        List<QueryResult<String, Foo>> asQueryResult = dataStore.getAsQueryResult(String.class, query);
+        QueryResult<String, Foo> first = asQueryResult.get(0);
+        QueryResult<String, Foo> second = asQueryResult.get(1);
+
+        assertEquals("1_Sleiman",first.rowKey());
+        assertEquals("2_Sleiman",second.rowKey());
+
+
+
     }
 
     @Test
