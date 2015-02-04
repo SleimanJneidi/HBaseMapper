@@ -4,6 +4,7 @@ import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.rolonews.hbasemapper.annotations.Column;
+import com.rolonews.hbasemapper.query.QueryResult;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 
@@ -37,10 +38,8 @@ public class HResultParser<T> implements ResultParser<T> {
     }
 
     @Override
-    public T valueOf(Result result) {
+    public final T valueOf(Result result) {
         Preconditions.checkNotNull(result);
-
-
         try {
             T object;
             if(instanceCreator.isPresent()){
@@ -51,8 +50,6 @@ public class HResultParser<T> implements ResultParser<T> {
                 object = constructor.newInstance();
             }
 
-            ObjectSerializer serializer = new BasicObjectSerializer();
-
             for (CellDescriptor mColumn : mapper.columns().keySet()) {
 
                 byte[] familyBuffer = Bytes.toBytes(mColumn.family());
@@ -62,6 +59,8 @@ public class HResultParser<T> implements ResultParser<T> {
                 if (resultBuffer != null) {
                     Field field = mapper.columns().get(mColumn);
                     field.setAccessible(true);
+
+                    ObjectSerializer serializer = SerializationFactory.getSerializer(field.getType());
                     Object desrializedBuffer = serializer.deserialize(resultBuffer, field.getType());
                     field.set(object, desrializedBuffer);
                 }
@@ -80,4 +79,15 @@ public class HResultParser<T> implements ResultParser<T> {
 
     }
 
+    public final <K> QueryResult<K,T> valueAsQueryResult(Class<K> keyClazz, Result result){
+        Preconditions.checkNotNull(result);
+
+        byte[] rowBuffer = result.getRow();
+        ObjectSerializer serializer = new BasicObjectSerializer();
+        K row = serializer.deserialize(rowBuffer, keyClazz);
+        T object = valueOf(result);
+        QueryResult<K,T> queryResult = new QueryResult<K, T>(row,object);
+
+        return queryResult;
+    }
 }

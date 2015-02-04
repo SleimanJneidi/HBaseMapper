@@ -5,13 +5,12 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.rolonews.hbasemapper.*;
-import com.rolonews.hbasemapper.annotations.Column;
 import com.rolonews.hbasemapper.exceptions.ColumnNotMappedException;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.filter.*;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Pair;
-
+import static com.rolonews.hbasemapper.SerializationFactory.*;
 import java.lang.reflect.Field;
 import java.util.Map;
 
@@ -47,7 +46,6 @@ public class Query<T> implements IQuery<T>{
 
         private final Class<T> clazz;
         private final Scan scanner;
-        private final ObjectSerializer serializer;
         private final FilterList filterList;
         private final EntityMapper<T> typeInfo;
 
@@ -55,32 +53,32 @@ public class Query<T> implements IQuery<T>{
             this.clazz = clazz;
             this.scanner = new Scan();
             this.filterList = new FilterList();
-            this.serializer = new BasicObjectSerializer();
             this.typeInfo = MappingRegistry.registerIfAbsent(clazz);
 
         }
 
         public Builder<T> rowKeyPrefix(Object value) {
-            byte[] prefix = serializer.serialize(value);
+            byte[] prefix = getSerializer(value).serialize(value);
             Filter filter = new PrefixFilter(prefix);
             filterList.addFilter(filter);
             return this;
         }
 
         public Builder<T> startRow(Object startRow) {
-            byte[] startRowBytes = serializer.serialize(startRow);
+            byte[] startRowBytes = getSerializer(startRow).serialize(startRow);
             scanner.setStartRow(startRowBytes);
 
             return this;
         }
 
         public Builder<T> limit(long limit){
-            scanner.setMaxResultSize(limit);
+            Filter filter = new PageFilter(limit);
+            filterList.addFilter(filter);
             return this;
         }
 
         public Builder<T> stopRow(Object stopRow) {
-            byte[] stopRowBytes = serializer.serialize(stopRow);
+            byte[] stopRowBytes = getSerializer(stopRow).serialize(stopRow);
             scanner.setStopRow(stopRowBytes);
 
             return this;
@@ -90,7 +88,7 @@ public class Query<T> implements IQuery<T>{
             Preconditions.checkNotNull(field);
             Preconditions.checkNotNull(value);
             Pair<byte[], byte[]> familyQualPair = getColumnByFieldName(field, this.typeInfo);
-            byte[] valueBytes = serializer.serialize(value);
+            byte[] valueBytes = getSerializer(value).serialize(value);
             Filter filter = getComparisionFilter(familyQualPair, CompareFilter.CompareOp.EQUAL, valueBytes);
             this.filterList.addFilter(filter);
 
@@ -101,7 +99,7 @@ public class Query<T> implements IQuery<T>{
             Preconditions.checkNotNull(field);
             Preconditions.checkNotNull(value);
             Pair<byte[], byte[]> familyQualPair = getColumnByFieldName(field, this.typeInfo);
-            byte[] valueBytes = serializer.serialize(value);
+            byte[] valueBytes = getSerializer(value).serialize(value);
             Filter filter = getComparisionFilter(familyQualPair, CompareFilter.CompareOp.NOT_EQUAL, valueBytes);
             this.filterList.addFilter(filter);
 
@@ -114,7 +112,7 @@ public class Query<T> implements IQuery<T>{
             Preconditions.checkNotNull(value);
 
             Pair<byte[], byte[]> familyQualPair = getColumnByFieldName(field, this.typeInfo);
-            byte[] valueBytes = serializer.serialize(value);
+            byte[] valueBytes = getSerializer(value).serialize(value);
             Filter filter = getComparisionFilter(familyQualPair, CompareFilter.CompareOp.GREATER, valueBytes);
             this.filterList.addFilter(filter);
 
@@ -126,7 +124,7 @@ public class Query<T> implements IQuery<T>{
             Preconditions.checkNotNull(value);
 
             Pair<byte[], byte[]> familyQualPair = getColumnByFieldName(field, this.typeInfo);
-            byte[] valueBytes = serializer.serialize(value);
+            byte[] valueBytes = getSerializer(value).serialize(value);
             Filter filter = getComparisionFilter(familyQualPair, CompareFilter.CompareOp.GREATER_OR_EQUAL, valueBytes);
             this.filterList.addFilter(filter);
 
@@ -138,7 +136,7 @@ public class Query<T> implements IQuery<T>{
             Preconditions.checkNotNull(value);
 
             Pair<byte[], byte[]> familyQualPair = getColumnByFieldName(field, this.typeInfo);
-            byte[] valueBytes = serializer.serialize(value);
+            byte[] valueBytes = getSerializer(value).serialize(value);
             Filter filter = getComparisionFilter(familyQualPair, CompareFilter.CompareOp.LESS, valueBytes);
             this.filterList.addFilter(filter);
 
@@ -150,7 +148,7 @@ public class Query<T> implements IQuery<T>{
             Preconditions.checkNotNull(value);
 
             Pair<byte[], byte[]> familyQualPair = getColumnByFieldName(field, this.typeInfo);
-            byte[] valueBytes = serializer.serialize(value);
+            byte[] valueBytes = getSerializer(value).serialize(value);
             Filter filter = getComparisionFilter(familyQualPair, CompareFilter.CompareOp.LESS_OR_EQUAL, valueBytes);
             this.filterList.addFilter(filter);
 
@@ -158,7 +156,9 @@ public class Query<T> implements IQuery<T>{
         }
 
         public Query<T> build() {
-            this.scanner.setFilter(this.filterList);
+            if(this.filterList.getFilters().size()>0) {
+                this.scanner.setFilter(this.filterList);
+            }
 
             return new Query<T>(this);
         }
