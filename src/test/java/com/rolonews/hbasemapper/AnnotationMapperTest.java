@@ -2,12 +2,16 @@ package com.rolonews.hbasemapper;
 
 import com.google.common.base.Function;
 import com.rolonews.hbasemapper.annotations.*;
-
 import com.rolonews.hbasemapper.exceptions.InvalidMappingException;
+import com.rolonews.hbasemapper.mapping.AnnotationEntityMapper;
+import com.rolonews.hbasemapper.mapping.EntityMapper;
+
 import static org.junit.Assert.*;
+
 import org.junit.Test;
 
 import javax.annotation.Nullable;
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 

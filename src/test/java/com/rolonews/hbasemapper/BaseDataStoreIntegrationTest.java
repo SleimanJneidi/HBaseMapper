@@ -3,9 +3,10 @@ package com.rolonews.hbasemapper;
 import com.google.common.base.Optional;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Supplier;
-
 import com.rolonews.hbasemapper.exceptions.ColumnNotMappedException;
+import com.rolonews.hbasemapper.query.HResultParser;
 import com.rolonews.hbasemapper.query.Query;
+
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;

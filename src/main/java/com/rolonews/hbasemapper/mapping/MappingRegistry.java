@@ -1,4 +1,4 @@
-package com.rolonews.hbasemapper;
+package com.rolonews.hbasemapper.mapping;
 
 import java.util.concurrent.ConcurrentHashMap;
 

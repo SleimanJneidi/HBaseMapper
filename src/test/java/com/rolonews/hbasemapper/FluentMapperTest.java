@@ -1,6 +1,9 @@
 package com.rolonews.hbasemapper;
 
 import com.google.common.base.Function;
+import com.rolonews.hbasemapper.mapping.EntityMapper;
+import com.rolonews.hbasemapper.mapping.FluentEntityMapper;
+
 import org.junit.Test;
 
 import javax.annotation.Nullable;

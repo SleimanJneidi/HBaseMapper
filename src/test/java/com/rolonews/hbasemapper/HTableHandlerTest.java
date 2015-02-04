@@ -10,6 +10,8 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import com.rolonews.hbasemapper.mapping.HTableHandler;
+
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.when;
 

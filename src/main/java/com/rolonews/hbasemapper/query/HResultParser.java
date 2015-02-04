@@ -1,9 +1,15 @@
-package com.rolonews.hbasemapper;
+package com.rolonews.hbasemapper.query;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
+import com.rolonews.hbasemapper.BasicObjectSerializer;
+import com.rolonews.hbasemapper.ObjectSerializer;
 import com.rolonews.hbasemapper.annotations.Column;
+import com.rolonews.hbasemapper.mapping.CellDescriptor;
+import com.rolonews.hbasemapper.mapping.EntityMapper;
+import com.rolonews.hbasemapper.mapping.MappingRegistry;
+
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 

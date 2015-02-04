@@ -5,13 +5,20 @@ import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Lists;
+import com.rolonews.hbasemapper.mapping.CellDescriptor;
+import com.rolonews.hbasemapper.mapping.EntityMapper;
+import com.rolonews.hbasemapper.mapping.HTableHandler;
+import com.rolonews.hbasemapper.mapping.MappingRegistry;
+import com.rolonews.hbasemapper.query.HResultParser;
 import com.rolonews.hbasemapper.query.IQuery;
+
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
+
 import static com.rolonews.hbasemapper.SerializationFactory.*;
 
 /**

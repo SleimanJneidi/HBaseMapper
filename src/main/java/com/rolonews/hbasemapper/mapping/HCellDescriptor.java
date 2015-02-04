@@ -1,4 +1,4 @@
-package com.rolonews.hbasemapper;
+package com.rolonews.hbasemapper.mapping;
 
 /**
 * Created by Sleiman on 03/02/2015.

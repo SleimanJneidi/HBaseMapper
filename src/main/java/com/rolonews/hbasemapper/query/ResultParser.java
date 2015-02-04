@@ -1,4 +1,4 @@
-package com.rolonews.hbasemapper;
+package com.rolonews.hbasemapper.query;
 
 import org.apache.hadoop.hbase.client.Result;
 

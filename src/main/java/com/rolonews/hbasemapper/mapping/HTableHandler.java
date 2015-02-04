@@ -1,4 +1,4 @@
-package com.rolonews.hbasemapper;
+package com.rolonews.hbasemapper.mapping;
 
 import com.google.common.base.Preconditions;
 import org.apache.hadoop.hbase.HColumnDescriptor;

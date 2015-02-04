@@ -2,6 +2,8 @@ package com.rolonews.hbasemapper;
 
 import org.apache.hadoop.hbase.client.HConnection;
 
+import com.rolonews.hbasemapper.mapping.EntityMapper;
+
 /**
  *
  * Created by Sleiman on 12/12/2014.

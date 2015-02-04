@@ -2,6 +2,7 @@ package com.rolonews.hbasemapper;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
+import com.rolonews.hbasemapper.mapping.EntityMapper;
 import com.rolonews.hbasemapper.query.IQuery;
 
 import java.util.List;

@@ -7,6 +7,10 @@ import com.google.common.collect.Maps;
 import com.rolonews.hbasemapper.*;
 import com.rolonews.hbasemapper.annotations.Column;
 import com.rolonews.hbasemapper.exceptions.ColumnNotMappedException;
+import com.rolonews.hbasemapper.mapping.CellDescriptor;
+import com.rolonews.hbasemapper.mapping.EntityMapper;
+import com.rolonews.hbasemapper.mapping.MappingRegistry;
+
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.filter.*;
 import org.apache.hadoop.hbase.util.Bytes;

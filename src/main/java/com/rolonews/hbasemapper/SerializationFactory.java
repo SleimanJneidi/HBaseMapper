@@ -2,10 +2,10 @@ package com.rolonews.hbasemapper;
 
 import com.google.common.base.Preconditions;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+
+import org.apache.commons.lang.NotImplementedException;
 
 /**
  * Created by Sleiman on 24/01/2015.
@@ -28,8 +28,6 @@ public class SerializationFactory {
 
          return new BasicObjectSerializer();
         }
-
-
         throw new NotImplementedException();
     }
 
