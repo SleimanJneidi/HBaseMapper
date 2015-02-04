@@ -4,6 +4,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.rolonews.hbasemapper.mapping.EntityMapper;
 import com.rolonews.hbasemapper.query.IQuery;
+import com.rolonews.hbasemapper.query.QueryResult;
 
 import java.util.List;
 
@@ -30,5 +31,6 @@ public interface DataStore<T> {
 
     public List<T> get(IQuery<T> query);
 
-    public EntityMapper<T> mapper();
+    public <K> List<QueryResult<K,T>> getAsQueryResult(Class<K> rowKeyClazz, IQuery<T> query);
+
 }

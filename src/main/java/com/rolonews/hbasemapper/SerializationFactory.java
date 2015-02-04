@@ -12,9 +12,9 @@ import org.apache.commons.lang.NotImplementedException;
  */
 public class SerializationFactory {
 
-    public static ObjectSerializer getSerializer(Object object){
-        Preconditions.checkNotNull(object);
-        String typeName = object.getClass().getName();
+    public static ObjectSerializer getSerializer(Class<?> clazz){
+        Preconditions.checkNotNull(clazz);
+        String typeName = clazz.getName();
 
 
         if(String.class.getName().equals(typeName)
@@ -24,11 +24,17 @@ public class SerializationFactory {
                 || Boolean.class.getName().equals(typeName) || "boolean".equals(typeName)
                 || Long.class.getName().equals(typeName) || "long".equals(typeName)
                 || BigDecimal.class.getName().equals(typeName)
-                || object instanceof ByteBuffer){
+                || ByteBuffer.class.isAssignableFrom(clazz)){
 
-         return new BasicObjectSerializer();
+            return new BasicObjectSerializer();
         }
         throw new NotImplementedException();
+    }
+    public static ObjectSerializer getSerializer(Object object){
+        Preconditions.checkNotNull(object);
+        Class<?> type = object.getClass();
+        ObjectSerializer serializer = getSerializer(type);
+        return serializer;
     }
 
 }

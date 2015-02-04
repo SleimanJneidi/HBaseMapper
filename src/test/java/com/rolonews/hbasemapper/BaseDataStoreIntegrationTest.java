@@ -4,8 +4,11 @@ import com.google.common.base.Optional;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Supplier;
 import com.rolonews.hbasemapper.exceptions.ColumnNotMappedException;
+import com.rolonews.hbasemapper.mapping.MappingRegistry;
 import com.rolonews.hbasemapper.query.HResultParser;
+import com.rolonews.hbasemapper.query.IQuery;
 import com.rolonews.hbasemapper.query.Query;
+import com.rolonews.hbasemapper.query.QueryResult;
 
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
@@ -56,13 +59,13 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
         DataStore<Foo> dataStore = DataStoreFactory.getDataStore(Foo.class,connection);
 
 
-        Foo foo = new Foo();
+        Foo foo = Foo.getInstance();
         foo.setId(1);
         foo.setName("Sleiman");
         foo.setAge(12);
         foo.setJob("Jobless");
 
-        Foo foo1 = new Foo();
+        Foo foo1 = Foo.getInstance();
         foo1.setId(2);
         foo1.setName("Sleiman");
         foo1.setAge(12);
@@ -73,10 +76,43 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
     }
 
     @Test
+    public void testQueryWithResult() throws Exception{
+
+        DataStore<Foo> dataStore = DataStoreFactory.getDataStore(Foo.class,connection);
+
+
+        Foo foo = Foo.getInstance();
+        foo.setId(1);
+        foo.setName("Sleiman");
+        foo.setAge(12);
+        foo.setJob("Jobless");
+
+        Foo foo1 = Foo.getInstance();
+        foo1.setId(2);
+        foo1.setName("Sleiman");
+        foo1.setAge(12);
+        foo1.setJob("Jobless");
+
+        dataStore.put(Arrays.asList(foo, foo1));
+
+        IQuery<Foo> query = Query.builder(Foo.class).build();
+
+        List<QueryResult<String, Foo>> asQueryResult = dataStore.getAsQueryResult(String.class, query);
+        QueryResult<String, Foo> first = asQueryResult.get(0);
+        QueryResult<String, Foo> second = asQueryResult.get(1);
+
+        assertEquals("1_Sleiman",first.rowKey());
+        assertEquals("2_Sleiman",second.rowKey());
+
+
+
+    }
+
+    @Test
     public void testCanParseResultFromType() throws Exception {
         DataStore<Foo> dataStore = DataStoreFactory.getDataStore(Foo.class,connection);
 
-        Foo foo = new Foo();
+        Foo foo = Foo.getInstance();
         foo.setId(1);
         foo.setName("Sleiman");
         foo.setAge(12);
@@ -90,12 +126,12 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
 
             @Override
             public Foo get() {
-                return new Foo();
+                return Foo.getInstance();
             }
 
         };
 
-        Foo foo1 = new HResultParser<Foo>(Foo.class, Optional.of(creator)).valueOf(result);
+        Foo foo1 = new HResultParser<Foo>(Foo.class,MappingRegistry.getMapping(Foo.class), Optional.of(creator)).valueOf(result);
 
         assertEquals(foo.getName(), foo1.getName());
         assertEquals(foo.getJob(), foo1.getJob());
@@ -109,7 +145,7 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
 
         DataStore<Foo> dataStore = DataStoreFactory.getDataStore(Foo.class,connection);
 
-        Foo foo = new Foo();
+        Foo foo = Foo.getInstance();
         foo.setId(1);
         foo.setName("Sleiman");
         foo.setAge(12);
@@ -131,13 +167,13 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
 
 
         // put some data first
-        Foo foo = new Foo();
+        Foo foo = Foo.getInstance();
         foo.setId(1);
         foo.setName("Sleiman");
         foo.setAge(12);
         foo.setJob("Jobless");
 
-        Foo foo1 = new Foo();
+        Foo foo1 = Foo.getInstance();
         foo1.setId(2);
         foo1.setName("Sleiman");
         foo1.setAge(12);
@@ -234,19 +270,19 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
     private List<Foo> getSomeFoos(){
         List<Foo> foos = new ArrayList<Foo>();
 
-        Foo foo = new Foo();
+        Foo foo = Foo.getInstance();
         foo.setId(1);
         foo.setName("Sleiman");
         foo.setAge(12);
         foo.setJob("Programmer");
 
-        Foo foo1 = new Foo();
+        Foo foo1 = Foo.getInstance();
         foo1.setId(1);
         foo1.setName("Peter");
         foo1.setAge(12);
         foo1.setJob("Accountant");
 
-        Foo foo2 = new Foo();
+        Foo foo2 = Foo.getInstance();
         foo2.setId(2);
         foo2.setName("John");
         foo2.setAge(13);

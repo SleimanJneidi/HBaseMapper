@@ -11,6 +11,7 @@ import com.rolonews.hbasemapper.mapping.HTableHandler;
 import com.rolonews.hbasemapper.mapping.MappingRegistry;
 import com.rolonews.hbasemapper.query.HResultParser;
 import com.rolonews.hbasemapper.query.IQuery;
+import com.rolonews.hbasemapper.query.QueryResult;
 
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -104,10 +105,12 @@ public class BasicDataStore<T> implements DataStore<T> {
     @Override
     public <K> Optional<T> get(K key) {
         Preconditions.checkNotNull(key);
-        byte[]rowKey = getSerializer(key).serialize(key);
-        try {
+        final byte[]rowKey = getSerializer(key).serialize(key);
 
-            HTableInterface tableInterface =  connection.getTable(mapper.tableDescriptor().getNameAsString());
+        HTableInterface tableInterface = null;
+        try {
+            HTableHandler tableHandler = new HTableHandler(this.connection);
+            tableInterface = tableHandler.getOrCreateHTable(mapper);
 
             Get get = new Get(rowKey);
 
@@ -121,12 +124,20 @@ public class BasicDataStore<T> implements DataStore<T> {
             if(result.getRow()==null){
                 return Optional.absent();
             }else{
-                HResultParser<T> resultParser = new HResultParser<T>(clazz,Optional.<Supplier<T>>absent());
+                HResultParser<T> resultParser = new HResultParser<T>(clazz,mapper,Optional.<Supplier<T>>absent());
                 T object = resultParser.valueOf(result);
                 return Optional.of(object);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }finally {
+            if(tableInterface!=null){
+                try {
+                    tableInterface.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         }
     }
 
@@ -158,9 +169,9 @@ public class BasicDataStore<T> implements DataStore<T> {
     }
 
     @Override
-    public List<T> get(final IQuery<T> queryBuilder) {
-        Preconditions.checkNotNull(queryBuilder);
-        final Scan scan = queryBuilder.getScanner();
+    public List<T> get(final IQuery<T> query) {
+        Preconditions.checkNotNull(query);
+        final Scan scan = query.getScanner();
         final List<T> results = new ArrayList<T>();
 
         Consumer<HTableInterface> applyScan = new Consumer<HTableInterface>() {
@@ -168,10 +179,38 @@ public class BasicDataStore<T> implements DataStore<T> {
             public void consume(HTableInterface hTableInterface) {
                 try {
                     ResultScanner resultScanner =  hTableInterface.getScanner(scan);
-                    HResultParser<T> resultParser = new HResultParser<T>(queryBuilder.getType(),Optional.<Supplier<T>>absent());
+                    HResultParser<T> resultParser = new HResultParser<T>(query.getType(),mapper,Optional.<Supplier<T>>absent());
                     for (Result result : resultScanner) {
                         T object = resultParser.valueOf(result);
                         results.add(object);
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+
+        operateOnTable(applyScan);
+
+        return results;
+    }
+
+    @Override
+    public <K> List<QueryResult<K, T>> getAsQueryResult(final Class<K> rowKeyClazz,final IQuery<T> query) {
+
+        Preconditions.checkNotNull(query);
+        final Scan scan = query.getScanner();
+        final List<QueryResult<K,T>> results = new ArrayList<QueryResult<K, T>>();
+
+        Consumer<HTableInterface> applyScan = new Consumer<HTableInterface>() {
+            @Override
+            public void consume(HTableInterface hTableInterface) {
+                try {
+                    ResultScanner resultScanner =  hTableInterface.getScanner(scan);
+                    HResultParser<T> resultParser = new HResultParser<T>(query.getType(),mapper,Optional.<Supplier<T>>absent());
+                    for (Result result : resultScanner) {
+                        QueryResult<K, T> queryResult = resultParser.valueAsQueryResult(rowKeyClazz, result);
+                        results.add(queryResult);
                     }
                 } catch (IOException e) {
                     throw new RuntimeException(e);
@@ -261,11 +300,6 @@ public class BasicDataStore<T> implements DataStore<T> {
                 }
             }
         }
-    }
-
-    @Override
-    public EntityMapper<T> mapper() {
-        return this.mapper;
     }
 
 }

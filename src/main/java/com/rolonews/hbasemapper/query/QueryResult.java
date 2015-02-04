@@ -6,12 +6,20 @@ package com.rolonews.hbasemapper.query;
  */
 public class QueryResult<K,T> {
 
-    public final K rowKey;
-    public final T result;
+    private final K rowKey;
+    private final T object;
 
-    public QueryResult(K rowKey,T result){
+    public QueryResult(K rowKey,T object){
         this.rowKey  =rowKey;
-        this.result = result;
+        this.object = object;
+    }
+
+    public K rowKey(){
+        return this.rowKey;
+    }
+
+    public T object(){
+        return this.object;
     }
 
 }
