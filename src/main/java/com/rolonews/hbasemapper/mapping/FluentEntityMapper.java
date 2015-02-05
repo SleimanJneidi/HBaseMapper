@@ -100,7 +100,7 @@ public class FluentEntityMapper<T> implements EntityMapper<T> {
             this.tableName = tableName;
         }
 
-        public FluentEntityMapper<T> build(){
+        public EntityMapper<T> build(){
             Preconditions.checkArgument(StringUtils.isNotBlank(tableName));
             Preconditions.checkNotNull(rowKeyGenerator);
             Preconditions.checkArgument(columnFamilies.size()>=1);
@@ -127,6 +127,12 @@ public class FluentEntityMapper<T> implements EntityMapper<T> {
 
 
     }
+
+	@Override
+	public EntityMapper<T> register() {
+		MappingRegistry.register(this);
+		return this;
+	}
 
 
 }

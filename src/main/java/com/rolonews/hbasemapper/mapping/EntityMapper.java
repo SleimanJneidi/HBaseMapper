@@ -14,4 +14,5 @@ public interface EntityMapper<T>{
     HTableDescriptor tableDescriptor();
     Function<T,?> rowKeyGenerator();
     Map<CellDescriptor,Field> columns();
+    EntityMapper<T> register();
 }

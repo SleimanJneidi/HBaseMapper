@@ -141,4 +141,11 @@ public final class AnnotationEntityMapper<T> implements EntityMapper<T> {
 	public Map<CellDescriptor, Field> columns() {
 		return this.columns;
 	}
+
+	@Override
+	public EntityMapper<T> register() {
+		MappingRegistry.register(this);
+		return this;
+		
+	}
 }
