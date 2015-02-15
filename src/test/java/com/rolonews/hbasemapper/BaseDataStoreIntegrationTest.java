@@ -12,6 +12,7 @@ import com.rolonews.hbasemapper.query.QueryResult;
 
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.filter.PageFilter;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.After;
 import org.junit.Test;
@@ -262,10 +263,6 @@ public class BaseDataStoreIntegrationTest extends BaseTest {
 
         assertEquals(someFoos.size(),results.size());
     }
-
-
-
-
 
     private List<Foo> getSomeFoos(){
         List<Foo> foos = new ArrayList<Foo>();

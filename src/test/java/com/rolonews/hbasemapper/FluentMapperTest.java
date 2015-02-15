@@ -30,6 +30,7 @@ public class FluentMapperTest {
         assertEquals(Bar.class, mapper.clazz());
         assertEquals("bar",mapper.tableDescriptor().getTableName().getNameAsString());
         assertEquals(1, mapper.columns().size());
+
     }
 
     class Bar{
