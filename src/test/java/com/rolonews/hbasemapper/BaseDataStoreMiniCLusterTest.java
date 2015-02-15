@@ -29,7 +29,7 @@ import static org.junit.Assert.*;
  *
  * Created by Sleiman on 11/12/2014.
  */
-public class BaseDataStoreIntegrationTest extends BaseTest {
+public class BaseDataStoreMiniCLusterTest extends BaseTest {
 
     private static final HConnection connection = BaseTest.getMiniClusterConnection();
 
