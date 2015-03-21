@@ -1,6 +1,6 @@
 package com.rolonews.hbasemapper.hbasehandler;
 
-import static com.rolonews.hbasemapper.StringConverter.*;
+import static com.rolonews.hbasemapper.serialisation.StringConverter.*;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.junit.Test;

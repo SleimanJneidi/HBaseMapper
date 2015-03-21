@@ -128,11 +128,11 @@ public class FluentEntityMapper<T> implements EntityMapper<T> {
 
     }
 
-	@Override
-	public EntityMapper<T> register() {
-		MappingRegistry.register(this);
-		return this;
-	}
+    @Override
+    public EntityMapper<T> register() {
+        MappingRegistry.register(this);
+        return this;
+    }
 
 
 }

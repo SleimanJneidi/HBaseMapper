@@ -1,7 +1,9 @@
-package com.rolonews.hbasemapper;
+package com.rolonews.hbasemapper.serialisation;
 
+import com.google.common.base.Enums;
 import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
+
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.hadoop.hbase.util.Bytes;
 
@@ -18,7 +20,8 @@ public class BasicObjectSerializer implements ObjectSerializer{
     @Override
     public byte[] serialize(Object object) {
         Preconditions.checkNotNull(object);
-        String typeName = object.getClass().getName();
+        Class<? extends Object> objectClass = object.getClass();
+        String typeName = objectClass.getName();
 
         if(String.class.getName().equals(typeName)) {
             return Bytes.toBytes((String) object);
@@ -40,6 +43,9 @@ public class BasicObjectSerializer implements ObjectSerializer{
         }
         if(BigDecimal.class.getName().equals(typeName)){
             return Bytes.toBytes((BigDecimal)object);
+        }
+        if(Enum.class.isAssignableFrom(objectClass)){
+            return Bytes.toBytes(((Enum<?>) object).name());
         }
         if(object instanceof ByteBuffer){
             return Bytes.toBytes((ByteBuffer)object);
@@ -76,6 +82,9 @@ public class BasicObjectSerializer implements ObjectSerializer{
         }
         if(BigDecimal.class.getName().equals(typeName)){
             return (T) Bytes.toBigDecimal(buffer);
+        }
+        if(Enum.class.isAssignableFrom(clazz)){
+            return (T) Enums.getIfPresent((Class<? extends Enum>)clazz, Bytes.toString(buffer)).orNull();
         }
         else{
             TypeToken typeToken = TypeToken.of(clazz);

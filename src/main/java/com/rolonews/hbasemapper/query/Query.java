@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
-import com.rolonews.hbasemapper.*;
 import com.rolonews.hbasemapper.exceptions.ColumnNotMappedException;
 import com.rolonews.hbasemapper.mapping.CellDescriptor;
 import com.rolonews.hbasemapper.mapping.EntityMapper;
@@ -14,7 +13,9 @@ import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.filter.*;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Pair;
-import static com.rolonews.hbasemapper.SerializationFactory.*;
+
+import static com.rolonews.hbasemapper.serialisation.SerializationFactory.*;
+
 import java.lang.reflect.Field;
 import java.util.Map;
 
@@ -78,6 +79,7 @@ public class Query<T> implements IQuery<T>{
         public Builder<T> limit(long limit){
             Filter filter = new PageFilter(limit);
             filterList.addFilter(filter);
+            scanner.setMaxResultSize(limit);
             return this;
         }
 
@@ -88,6 +90,10 @@ public class Query<T> implements IQuery<T>{
             return this;
         }
 
+        public Builder<T> setCaching(int caching){
+            scanner.setCaching(caching);
+            return this;
+        }
         public Builder<T> equals(final String field, Object value) {
             Preconditions.checkNotNull(field);
             Preconditions.checkNotNull(value);

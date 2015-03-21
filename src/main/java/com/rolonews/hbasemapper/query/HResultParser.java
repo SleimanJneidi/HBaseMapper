@@ -3,13 +3,11 @@ package com.rolonews.hbasemapper.query;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
-import com.rolonews.hbasemapper.BasicObjectSerializer;
-import com.rolonews.hbasemapper.ObjectSerializer;
+import com.rolonews.hbasemapper.serialisation.BasicObjectSerializer;
+import com.rolonews.hbasemapper.serialisation.ObjectSerializer;
 import com.rolonews.hbasemapper.SerializationFactory;
-import com.rolonews.hbasemapper.annotations.Column;
 import com.rolonews.hbasemapper.mapping.CellDescriptor;
 import com.rolonews.hbasemapper.mapping.EntityMapper;
-import com.rolonews.hbasemapper.mapping.MappingRegistry;
 
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -17,8 +15,6 @@ import org.apache.hadoop.hbase.util.Bytes;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Map;
-import java.util.regex.Pattern;
 
 /**
  *

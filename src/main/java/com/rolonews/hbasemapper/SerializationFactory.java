@@ -5,6 +5,8 @@ import com.google.common.base.Preconditions;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
+import com.rolonews.hbasemapper.serialisation.BasicObjectSerializer;
+import com.rolonews.hbasemapper.serialisation.ObjectSerializer;
 import org.apache.commons.lang.NotImplementedException;
 
 /**

@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
 
-import static com.rolonews.hbasemapper.SerializationFactory.*;
+import static com.rolonews.hbasemapper.serialisation.SerializationFactory.*;
 
 /**
  *
@@ -61,7 +61,7 @@ public class BasicDataStore<T> implements DataStore<T> {
     @Override
     public void put(List<T> objects) {
         Preconditions.checkNotNull(objects);
-        Preconditions.checkArgument(objects.size()>=1);
+        if(objects.isEmpty()) return;
 
         List<Put> puts = new ArrayList<Put>();
         for(T object: objects){
@@ -184,6 +184,8 @@ public class BasicDataStore<T> implements DataStore<T> {
                         T object = resultParser.valueOf(result);
                         results.add(object);
                     }
+                    resultScanner.close();
+
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -273,16 +275,16 @@ public class BasicDataStore<T> implements DataStore<T> {
 
     private void insert(final List<Put> puts){
 
-            Consumer<HTableInterface> putOperations = new Consumer<HTableInterface>() {
-                @Override
-                public void consume(HTableInterface hTableInterface) {
-                    try {
-                        hTableInterface.put(puts);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+        Consumer<HTableInterface> putOperations = new Consumer<HTableInterface>() {
+            @Override
+            public void consume(HTableInterface hTableInterface) {
+                try {
+                    hTableInterface.put(puts);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
-            };
+            }
+        };
         operateOnTable(putOperations);
     }
 

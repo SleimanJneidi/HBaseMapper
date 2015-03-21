@@ -1,4 +1,4 @@
-package com.rolonews.hbasemapper;
+package com.rolonews.hbasemapper.serialisation;
 
 import com.google.common.base.Preconditions;
 import org.apache.commons.lang.NotImplementedException;
