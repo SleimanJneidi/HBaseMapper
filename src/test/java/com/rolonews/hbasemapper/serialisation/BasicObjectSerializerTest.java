@@ -1,4 +1,4 @@
-package com.rolonews.hbasemapper.hbasehandler;
+package com.rolonews.hbasemapper.serialisation;
 
 import com.rolonews.hbasemapper.serialisation.BasicObjectSerializer;
 import com.rolonews.hbasemapper.serialisation.ObjectSerializer;
