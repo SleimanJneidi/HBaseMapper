@@ -1,8 +1,5 @@
 package com.rolonews.hbasemapper;
 import com.google.common.base.Function;
-import com.rolonews.hbasemapper.annotations.HValidate;
-import com.rolonews.hbasemapper.annotations.Column;
-import com.rolonews.hbasemapper.annotations.Table;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.HConnection;
@@ -46,8 +43,8 @@ public class BasicDataStoreTest extends BaseTest {
     @Before
     public void setup() throws IOException {
 
-        when(connection.isTableAvailable(TableName.valueOf("Person"))).thenReturn(true);
-        when(connection.getTable(TableName.valueOf("Person"))).thenReturn(tableInterface);
+        when(connection.isTableAvailable(TableName.valueOf("FooTrial"))).thenReturn(true);
+        when(connection.getTable(TableName.valueOf("FooTrial"))).thenReturn(tableInterface);
 
     }
 
@@ -59,165 +56,115 @@ public class BasicDataStoreTest extends BaseTest {
     @Test
     public void testPutObject() throws IOException {
 
-        DataStore<Person> dataStore = DataStoreFactory.getDataStore(Person.class,connection);
-        Person person = new Person();
-        person.id = "someId";
-        person.name = "Peter";
-        person.age = 13;
-
-
-        dataStore.put(person);
+        DataStore<Foo> dataStore = DataStoreFactory.getDataStore(Foo.class,connection);
+        Foo foo = Foo.getInstance();
+        foo.setId(10);
+        foo.setName("Peter");
+        foo.setAge(13);
+       
+        dataStore.put(foo);
         verify(tableInterface).put(putCaptor.capture());
         Put put = putCaptor.getValue().get(0);
 
         assertTrue(put.has(Bytes.toBytes("info"),Bytes.toBytes("name")));
         assertTrue(put.has(Bytes.toBytes("info"), Bytes.toBytes("age")));
-        assertArrayEquals(put.get(Bytes.toBytes("info"), Bytes.toBytes("age")).get(0).getValue(), Bytes.toBytes(person.age));
-        assertArrayEquals(put.get(Bytes.toBytes("info"), Bytes.toBytes("name")).get(0).getValue(), Bytes.toBytes(person.name));
+        assertArrayEquals(put.get(Bytes.toBytes("info"), Bytes.toBytes("age")).get(0).getValue(), Bytes.toBytes(foo.getAge()));
+        assertArrayEquals(put.get(Bytes.toBytes("info"), Bytes.toBytes("name")).get(0).getValue(), Bytes.toBytes(foo.getName()));
 
     }
 
     @Test
     public void testPutObjectWithKey() throws IOException {
-        DataStore<Person> dataStore = DataStoreFactory.getDataStore(Person.class,connection);
-        Person person = new Person();
-        person.name = "Peter";
-        person.age = 13;
+        DataStore<Foo> dataStore = DataStoreFactory.getDataStore(Foo.class,connection);
+        Foo foo = Foo.getInstance();
+        foo.setName("Peter");
+        foo.setAge(13);
 
-        dataStore.put("someId",person);
+        dataStore.put("10",foo);
 
         verify(tableInterface).put(putCaptor.capture());
         Put put = putCaptor.getValue().get(0);
 
-        assertArrayEquals(put.getRow(),Bytes.toBytes("someId"));
+        assertArrayEquals(put.getRow(),Bytes.toBytes("10"));
     }
 
     @Test
     public void testPutBulkObjects() throws IOException {
-        DataStore<Person> dataStore = DataStoreFactory.getDataStore(Person.class,connection);
+        DataStore<Foo> dataStore = DataStoreFactory.getDataStore(Foo.class,connection);
 
-        Person person1 = new Person();
-        person1.id = "someId";
-        person1.name = "Peter";
-        person1.age = 13;
+        Foo foo1 = Foo.getInstance();
+        foo1.setId(10);
+        foo1.setName("Peter");
+        foo1.setAge(13);
 
-        Person person2 = new Person();
-        person2.id = "someId1";
-        person2.name = "John";
-        person2.age = 84;
+        Foo foo2 = Foo.getInstance();
+        foo2.setId(11);
+        foo2.setName("John");
+        foo2.setAge(84);
 
-        List<BasicDataStoreTest.Person> personsToInsert = Arrays.asList(person1,person2);
+        List<Foo> foosToInsert = Arrays.asList(foo1,foo2);
 
-        dataStore.put(personsToInsert);
+        dataStore.put(foosToInsert);
 
         verify(tableInterface).put(putCaptor.capture());
 
         List<Put> capturesPuts = putCaptor.getValue();
 
-        assertEquals(personsToInsert.size(),capturesPuts.size());
+        assertEquals(foosToInsert.size(),capturesPuts.size());
 
-        for(int i=0;i<personsToInsert.size();i++){
-            Person person = personsToInsert.get(i);
+        for(int i=0;i<foosToInsert.size();i++){
+            Foo foo = foosToInsert.get(i);
             Put put  = capturesPuts.get(i);
 
-            assertArrayEquals(Bytes.toBytes(person.id),put.getRow());
+            assertArrayEquals(Bytes.toBytes(foo.getId()+"_" + foo.getName()),put.getRow());
         }
 
-
-    }
-
-    @Test
-    public void testPutBulkObjectsWithArbitraryKeys(){
-        DataStore<BasicDataStoreTest.Person> dataStore = DataStoreFactory.getDataStore(BasicDataStoreTest.Person.class,connection);
-
-        Person person1 = new Person();
-        person1.name = "Peter";
-        person1.age = 13;
-
-        Person person2 = new Person();
-        person2.name = "John";
-        person2.age = 84;
-
-        Function<BasicDataStoreTest.Person,String> keyFunction = new Function<Person, String>() {
-            @Nullable
-            @Override
-            public String apply(Person person) {
-                return person.name;
-            }
-        };
-
-        dataStore.put(keyFunction,Arrays.asList(person1,person2));
 
     }
 
     @Test
     public void testDeleteObjects() throws IOException {
-        DataStore<BasicDataStoreTest.Person> dataStore = DataStoreFactory.getDataStore(BasicDataStoreTest.Person.class,connection);
+        DataStore<Foo> dataStore = DataStoreFactory.getDataStore(Foo.class,connection);
 
-        Person person1 = new Person();
-        person1.id = "someId";
-        person1.name = "Peter";
-        person1.age = 13;
+        Foo foo1 = Foo.getInstance();
+        foo1.setId(11);
+        foo1.setName("Peter");
+        foo1.setAge(13);
 
-        dataStore.delete("someId");
+        dataStore.delete(11);
 
         verify(tableInterface).delete(deleteCaptors.capture());
 
         Delete capturedDelete = deleteCaptors.getValue().get(0);
 
-        assertArrayEquals(Bytes.toBytes(person1.id),capturedDelete.getRow());
+        assertArrayEquals(Bytes.toBytes(foo1.getId()),capturedDelete.getRow());
 
     }
 
     @Test
     public void testBulkDeletes()throws IOException{
-        DataStore<BasicDataStoreTest.Person> dataStore = DataStoreFactory.getDataStore(BasicDataStoreTest.Person.class,connection);
+        DataStore<Foo> dataStore = DataStoreFactory.getDataStore(Foo.class,connection);
 
-        Person person1 = new Person();
-        person1.id = "someId";
-        person1.name = "Peter";
-        person1.age = 13;
+        Foo foo1 = Foo.getInstance();
+        foo1.setId(11);
+        foo1.setName("Peter");
+        foo1.setAge(13);
 
-        Person person2 = new Person();
-        person2.id = "someId1";
-        person2.name = "John";
-        person2.age = 84;
+        Foo foo2 = Foo.getInstance();
+        foo2.setId(12);
+        foo2.setName("John");
+        foo2.setAge(84);
 
-        List<BasicDataStoreTest.Person> personsToDelete = Arrays.asList(person1,person2);
-        dataStore.delete(Arrays.asList("someId","someId1"));
+        List<Foo> FoosToDelete = Arrays.asList(foo1,foo2);
+        dataStore.delete(Arrays.asList(11, 12));
 
         verify(tableInterface).delete(deleteCaptors.capture());
         List<Delete> capturedDeletes = deleteCaptors.getValue();
 
-        for (int i=0;i<personsToDelete.size();i++) {
-            assertArrayEquals(Bytes.toBytes(personsToDelete.get(i).id),capturedDeletes.get(i).getRow());
+        for (int i=0;i<FoosToDelete.size();i++) {
+            assertArrayEquals(Bytes.toBytes(FoosToDelete.get(i).getId()),capturedDeletes.get(i).getRow());
         }
 
     }
 
-
-    @Table(name = "Person", columnFamilies = {"info"}, rowKeyGenerator = PersonRowKeyGenerator.class )
-    @HValidate(validator = PersonValidator.class)
-    class Person {
-
-        public String id;
-
-        @Column(family = "info", qualifier = "name")
-        public String name;
-
-        @Column(family = "info", qualifier = "age")
-        public int age;
-
-
-    }
-
-
-
-}
-class PersonRowKeyGenerator implements Function<BasicDataStoreTest.Person,String>{
-
-    @Override
-    public String apply(BasicDataStoreTest.Person person) {
-        return person.id;
-    }
 }

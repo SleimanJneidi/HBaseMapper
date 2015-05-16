@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<!-- 
+Test configuration for the embedded Hbase cluster.
+-->
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+	<property>
+	    <name>hbase.zookeeper.quorum</name>
+	    <value>localhost:51602</value>
+	</property>
+	<property>
+	    <name>hbase.zookeeper.property.clientPort</name>
+      <value>51999</value>
+	</property>
+	<property>
+	    <name>test.hbase.zookeeper.property.clientPort</name>
+      <value>51999</value>
+	</property>
+	<property>
+	    <name>hbase.master.port</name>
+      <value>51999</value>
+	</property>
+	<property>
+	    <name>hbase.master.info.port</name>
+      <value>51920</value>
+	</property>
+	<property>
+	    <name>hbase.regionserver.port</name>
+      <value>51930</value>
+	</property>
+	<property>
+	    <name>hbase.regionserver.info.port</name>
+      <value>51940</value>
+	</property>
+</configuration>

@@ -36,13 +36,13 @@ public class HTableHandlerTest extends BaseTest{
 
 
 
-        TableName tableName = TableName.valueOf("Person");
+        TableName tableName = TableName.valueOf("FooTrial");
         when(connection.isTableAvailable(tableName)).thenReturn(true);
         when(connection.getTable(tableName)).thenReturn(table);
         when(connection.getConfiguration()).thenReturn(configuration);
 
         HTableHandler tableHandler = new HTableHandler(connection);
-        HTableInterface  hTableInterface =  tableHandler.getOrCreateHTable(Person.class);
+        HTableInterface  hTableInterface =  tableHandler.getOrCreateHTable(Foo.class);
         assertNotNull(hTableInterface);
 
 

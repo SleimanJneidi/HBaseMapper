@@ -6,7 +6,9 @@ package com.rolonews.hbasemapper.exceptions;
  */
 public class ColumnNotMappedException extends RuntimeException {
 
-    public ColumnNotMappedException(String message){
+	private static final long serialVersionUID = 1L;
+
+	public ColumnNotMappedException(String message){
         super(message);
     }
 }

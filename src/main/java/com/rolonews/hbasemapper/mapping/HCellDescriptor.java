@@ -1,44 +1,49 @@
 package com.rolonews.hbasemapper.mapping;
 
+import com.google.common.base.Objects;
+
 /**
 * Created by Sleiman on 03/02/2015.
 */
-class HCellDescriptor implements CellDescriptor{
+public class HCellDescriptor{
 
     private final String family;
     private final String qualifier;
+    private final boolean isCollection;
 
-    HCellDescriptor(String family, String qualifier){
+    HCellDescriptor(String family, String qualifier, boolean isCollection){
         this.family = family;
         this.qualifier = qualifier;
+        this.isCollection = isCollection;
     }
-    @Override
+    
     public String family() {
         return this.family;
     }
 
-    @Override
     public String qualifier() {
         return this.qualifier;
+    }
+    
+    public boolean isCollection() {
+    	return isCollection;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        HCellDescriptor that = (HCellDescriptor) o;
-
-        if (family != null ? !family.equals(that.family) : that.family != null) return false;
-        if (qualifier != null ? !qualifier.equals(that.qualifier) : that.qualifier != null) return false;
-
-        return true;
+        if (this == o) {
+        	return true;
+        }
+        if(o instanceof HCellDescriptor){
+        	HCellDescriptor that = (HCellDescriptor) o;
+            return Objects.equal(family, that.family) && Objects.equal(qualifier, that.qualifier) && 
+            		isCollection == that.isCollection;
+        }
+        return false;
     }
 
     @Override
     public int hashCode() {
-        int result = family != null ? family.hashCode() : 0;
-        result = 31 * result + (qualifier != null ? qualifier.hashCode() : 0);
-        return result;
+        return Objects.hashCode(family, qualifier, isCollection);
     }
 }

@@ -7,7 +7,9 @@ package com.rolonews.hbasemapper.exceptions;
  */
 public class InvalidMappingException extends RuntimeException{
 
-    public InvalidMappingException(String message){
+	private static final long serialVersionUID = 1L;
+
+	public InvalidMappingException(String message){
         super(message);
     }
 

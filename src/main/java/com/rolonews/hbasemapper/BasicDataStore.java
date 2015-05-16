@@ -5,22 +5,24 @@ import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Lists;
-import com.rolonews.hbasemapper.mapping.CellDescriptor;
-import com.rolonews.hbasemapper.mapping.EntityMapper;
-import com.rolonews.hbasemapper.mapping.HTableHandler;
-import com.rolonews.hbasemapper.mapping.MappingRegistry;
+import com.rolonews.hbasemapper.exceptions.InvalidMappingException;
+import com.rolonews.hbasemapper.exceptions.ValidationException;
+import com.rolonews.hbasemapper.mapping.*;
 import com.rolonews.hbasemapper.query.HResultParser;
 import com.rolonews.hbasemapper.query.IQuery;
 import com.rolonews.hbasemapper.query.QueryResult;
-
+import com.rolonews.hbasemapper.serialisation.SerialisationManager;
 import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.filter.*;
+import org.apache.hadoop.hbase.filter.CompareFilter.CompareOp;
+import org.apache.hadoop.hbase.filter.FilterList.Operator;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.util.*;
-
-import static com.rolonews.hbasemapper.serialisation.SerializationFactory.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -33,6 +35,10 @@ public class BasicDataStore<T> implements DataStore<T> {
     private final HConnection connection;
     private final Class<T> clazz;
     private final EntityMapper<T> mapper;
+    private final SerialisationManager serializationManager;
+    
+    private final HObjectMapper<T> objectMapper;
+    final HResultParser<T> resultParser;
 
     protected BasicDataStore(final HConnection connection, final Class<T> clazz, final EntityMapper<T> mapper) {
         Preconditions.checkNotNull(connection);
@@ -42,89 +48,74 @@ public class BasicDataStore<T> implements DataStore<T> {
         this.clazz = clazz;
 
         if(mapper == null){
-            this.mapper = MappingRegistry.registerIfAbsent(clazz);
+            this.mapper = MappingRegistry.getMapping(clazz);
         }else{
             this.mapper = mapper;
         }
+        if(this.mapper == null){
+        	throw new InvalidMappingException("No mapping provided for class: "+ clazz);
+        }
+        this.serializationManager = this.mapper.serializationManager();
+        this.objectMapper = new HObjectMapper<T>(this.mapper);
+        this.resultParser = new HResultParser<T>(clazz, this.mapper, Optional.<Supplier<T>>absent());
     }
 
     @Override
-    public void put(final T object) {
+    public Put put(final T object) {
         Preconditions.checkNotNull(object);
-
+        validateObjects(Arrays.asList(object));
         byte[]rowKeyBuffer = rowKey(object);
-        Put put = createPut(rowKeyBuffer,object);
+        Put put = objectMapper.getPut(rowKeyBuffer,object);
         insert(Arrays.asList(put));
+        return put;
     }
 
 
     @Override
-    public void put(List<T> objects) {
+    public List<Put> put(List<T> objects) {
         Preconditions.checkNotNull(objects);
-        if(objects.isEmpty()) return;
+        if(objects.isEmpty()) return null;
+        validateObjects(objects);
 
         List<Put> puts = new ArrayList<Put>();
         for(T object: objects){
             byte[]rowKey = rowKey(object);
-            Put put = createPut(rowKey,object);
+            Put put = objectMapper.getPut(rowKey,object);
             puts.add(put);
         }
         insert(puts);
+        return puts;
     }
 
     @Override
-    public void put(Object key, T object) {
+    public Put put(Object key, T object) {
         Preconditions.checkNotNull(key);
         Preconditions.checkNotNull(object);
+        validateObjects(Arrays.asList(object));
 
-        byte[]rowKey = getSerializer(key).serialize(key);
-        Put put = createPut(rowKey,object);
+        byte[]rowKey = serializationManager.serialize(key);
+        Put put = objectMapper.getPut(rowKey,object);
 
         insert(Arrays.asList(put));
-    }
-
-    @Override
-    public <K> void put(Function<T, K> rowKeyFunction, List<T> objects) {
-        Preconditions.checkNotNull(objects);
-        Preconditions.checkArgument(objects.size()>=1);
-
-        Preconditions.checkNotNull(rowKeyFunction);
-        Preconditions.checkNotNull(clazz);
-
-
-        List<Put> puts = new ArrayList<Put>();
-        for(T object: objects){
-            Object rowKeyValue = rowKeyFunction.apply(object);
-            byte[]rowKey = getSerializer(rowKeyValue).serialize(rowKeyValue);
-            Put put = createPut(rowKey,object);
-            puts.add(put);
-        }
-        insert(puts);
+        return put;
     }
 
     @Override
     public <K> Optional<T> get(K key) {
         Preconditions.checkNotNull(key);
-        final byte[]rowKey = getSerializer(key).serialize(key);
+        final byte[]rowKey = serializationManager.serialize(key);
 
         HTableInterface tableInterface = null;
         try {
             HTableHandler tableHandler = new HTableHandler(this.connection);
             tableInterface = tableHandler.getOrCreateHTable(mapper);
-
             Get get = new Get(rowKey);
-
-            Set<CellDescriptor> columns = mapper.columns().keySet();
-
-            for(CellDescriptor column: columns){
-                get.addColumn(Bytes.toBytes(column.family()),Bytes.toBytes(column.qualifier()));
-            }
-
+            Filter filter = getGetFilter();
+			get.setFilter(filter);	
             Result result = tableInterface.get(get);
-            if(result.getRow()==null){
+            if(result.getRow() == null){
                 return Optional.absent();
-            }else{
-                HResultParser<T> resultParser = new HResultParser<T>(clazz,mapper,Optional.<Supplier<T>>absent());
+            } else{
                 T object = resultParser.valueOf(result);
                 return Optional.of(object);
             }
@@ -142,30 +133,29 @@ public class BasicDataStore<T> implements DataStore<T> {
     }
 
     @Override
-    public void delete(Object key) {
+    public Delete delete(Object key) {
         Preconditions.checkNotNull(key);
         Preconditions.checkNotNull(clazz);
 
-        byte[]rowKey = getSerializer(key).serialize(key);
+        byte[]rowKey = serializationManager.serialize(key);
         Delete delete = new Delete(rowKey);
         deleteObjects(new ArrayList<Delete>(Arrays.asList(delete)));
+        return delete;
     }
 
     @Override
-    public void delete(List<?> keys) {
+    public List<Delete> delete(List<?> keys) {
         Preconditions.checkNotNull(keys);
         Preconditions.checkNotNull(clazz);
 
-        List<Delete> deletes = Lists.transform(keys, new Function<Object, Delete>() {
-
-            @Override
-            public Delete apply(Object key) {
-                byte[] row = getSerializer(key).serialize(key);
-                return new Delete(row);
-            }
-        });
+        List<Delete> deletes = new ArrayList<Delete>(keys.size());
+        for (Object key : keys) {
+            byte[] row = serializationManager.serialize(key);
+            Delete delete = new Delete(row);
+            deletes.add(delete);
+        }
         deleteObjects(deletes);
-
+        return deletes;
     }
 
     @Override
@@ -179,13 +169,12 @@ public class BasicDataStore<T> implements DataStore<T> {
             public void consume(HTableInterface hTableInterface) {
                 try {
                     ResultScanner resultScanner =  hTableInterface.getScanner(scan);
-                    HResultParser<T> resultParser = new HResultParser<T>(query.getType(),mapper,Optional.<Supplier<T>>absent());
                     for (Result result : resultScanner) {
                         T object = resultParser.valueOf(result);
                         results.add(object);
                     }
                     resultScanner.close();
-
+                    
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -209,7 +198,6 @@ public class BasicDataStore<T> implements DataStore<T> {
             public void consume(HTableInterface hTableInterface) {
                 try {
                     ResultScanner resultScanner =  hTableInterface.getScanner(scan);
-                    HResultParser<T> resultParser = new HResultParser<T>(query.getType(),mapper,Optional.<Supplier<T>>absent());
                     for (Result result : resultScanner) {
                         QueryResult<K, T> queryResult = resultParser.valueAsQueryResult(rowKeyClazz, result);
                         results.add(queryResult);
@@ -225,6 +213,24 @@ public class BasicDataStore<T> implements DataStore<T> {
         return results;
     }
 
+    private Filter getGetFilter(){
+    	Set<HCellDescriptor> columns = mapper.columns().keySet();
+        List<Filter> filters = new ArrayList<Filter>();
+        for(HCellDescriptor column: columns){
+        	if(column.isCollection()){
+        		String prefix = collectionItemQualifier(column.qualifier(), "");
+				byte[] qualifierPrefixBytes = Bytes.toBytes(prefix);
+				QualifierFilter filter = new QualifierFilter(CompareOp.EQUAL, new BinaryPrefixComparator(qualifierPrefixBytes));
+        		filters.add(filter);
+        	}
+        	else {
+        		QualifierFilter qualifierFilter = new QualifierFilter(CompareOp.EQUAL, new BinaryComparator(Bytes.toBytes(column.qualifier())));
+        		filters.add(qualifierFilter);
+        	}
+        }
+        FilterList filterList = new FilterList(Operator.MUST_PASS_ONE, filters);
+        return filterList;
+    }
 
     private byte[]rowKey(final T object){
 
@@ -232,30 +238,8 @@ public class BasicDataStore<T> implements DataStore<T> {
         Function<T, ?> rowKeyGenerator =  mapper.rowKeyGenerator();
         Object rowKey = rowKeyGenerator.apply(object);
 
-        rowKeyBuffer = getSerializer(rowKey).serialize(rowKey);
+        rowKeyBuffer = serializationManager.serialize(rowKey);
         return rowKeyBuffer;
-    }
-
-    private Put createPut(final byte[] rowKey,final Object object){
-        try {
-            Put put = new Put(rowKey);
-            Map<CellDescriptor, Field> columns = mapper.columns();
-            for (Map.Entry<CellDescriptor, Field> columnFieldEntry : columns.entrySet()) {
-                Field field = columnFieldEntry.getValue();
-                CellDescriptor column = columnFieldEntry.getKey();
-                field.setAccessible(true);
-                Object fieldValue = field.get(object);
-                if (fieldValue != null) {
-                    byte[] buffer = getSerializer(fieldValue).serialize(fieldValue);
-                    put.add(Bytes.toBytes(column.family()), Bytes.toBytes(column.qualifier()), buffer);
-                }
-
-            }
-            return put;
-        }catch (IllegalAccessException e){
-            throw new RuntimeException(e);
-        }
-
     }
 
     private void deleteObjects(final List<Delete> deletes){
@@ -275,20 +259,20 @@ public class BasicDataStore<T> implements DataStore<T> {
 
     private void insert(final List<Put> puts){
 
-        Consumer<HTableInterface> putOperations = new Consumer<HTableInterface>() {
-            @Override
-            public void consume(HTableInterface hTableInterface) {
-                try {
-                    hTableInterface.put(puts);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+            Consumer<HTableInterface> putOperations = new Consumer<HTableInterface>() {
+                @Override
+                public void consume(HTableInterface hTableInterface) {
+                    try {
+                        hTableInterface.put(puts);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
-            }
-        };
+            };
         operateOnTable(putOperations);
     }
 
-    private void operateOnTable(Consumer<HTableInterface> tableInterfaceConsumer){
+    void operateOnTable(Consumer<HTableInterface> tableInterfaceConsumer){
         HTableInterface table = null;
         try {
             table = new HTableHandler(connection).getOrCreateHTable(mapper);
@@ -300,6 +284,18 @@ public class BasicDataStore<T> implements DataStore<T> {
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
+            }
+        }
+    }
+    
+    private String collectionItemQualifier(String prefix, Object keyOrIndex){
+    	return prefix + "." + keyOrIndex;
+    }
+
+    private void validateObjects(List<T> objects){
+        for (T object : objects) {
+            if(!this.mapper.validator().apply(object)){
+                throw new ValidationException(this.mapper.validator());
             }
         }
     }

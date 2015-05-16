@@ -11,18 +11,11 @@ public class MappingRegistry{
     private static final ConcurrentHashMap<Class<?>,EntityMapper<?>> mappedEntities = new ConcurrentHashMap<Class<?>, EntityMapper<?>>();
 
     @SuppressWarnings("unchecked")
-    public static <T> EntityMapper<T> getMapping(Class<T> clazz){
+	public static <T> EntityMapper<T> getMapping(Class<T> clazz){
         return (EntityMapper<T>)mappedEntities.get(clazz);
     }
 
     public static <T> void register(EntityMapper<T> mapper){
         mappedEntities.put(mapper.clazz(),mapper);
-    }
-
-    public static <T> EntityMapper<T> registerIfAbsent(Class<T> clazz){
-        if(!mappedEntities.containsKey(clazz)){
-            AnnotationEntityMapper.createAnnotationMapping(clazz).register();
-        }
-        return getMapping(clazz);
     }
 }

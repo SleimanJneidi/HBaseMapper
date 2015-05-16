@@ -1,19 +1,18 @@
 package com.rolonews.hbasemapper;
 
-import com.google.common.base.Function;
-import com.rolonews.hbasemapper.mapping.EntityMapper;
-import com.rolonews.hbasemapper.mapping.FluentEntityMapper;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import javax.annotation.Nullable;
-
-import static org.junit.Assert.*;
+import com.google.common.base.Function;
+import com.rolonews.hbasemapper.exceptions.InvalidMappingException;
+import com.rolonews.hbasemapper.mapping.EntityMapper;
+import com.rolonews.hbasemapper.mapping.FluentEntityMapper;
 /**
  * Created by Sleiman on 25/01/2015.
  */
-public class FluentMapperTest {
-
+public class FluentMapperTest extends BaseTest{
+	
     @Test
     public void testValidMapping(){
 
@@ -30,12 +29,25 @@ public class FluentMapperTest {
         assertEquals(Bar.class, mapper.clazz());
         assertEquals("bar",mapper.tableDescriptor().getTableName().getNameAsString());
         assertEquals(1, mapper.columns().size());
-
     }
+    
+    @Test(expected = InvalidMappingException.class)
+    public void testGenericClassMapping(){
+    	FluentEntityMapper.builder(ParamBar.class, "ParamBar");
+    }
+    
+    
 
-    class Bar{
+    static class Bar{
         private String id;
         private String name;
     }
+    
+    static class ParamBar<T> {
+    	private T t;
+    	private String name;
+    }
+    
+    
 
 }

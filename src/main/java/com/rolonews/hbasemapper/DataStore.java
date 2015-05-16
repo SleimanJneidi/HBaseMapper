@@ -1,10 +1,10 @@
 package com.rolonews.hbasemapper;
 
-import com.google.common.base.Function;
 import com.google.common.base.Optional;
-import com.rolonews.hbasemapper.mapping.EntityMapper;
 import com.rolonews.hbasemapper.query.IQuery;
 import com.rolonews.hbasemapper.query.QueryResult;
+import org.apache.hadoop.hbase.client.Delete;
+import org.apache.hadoop.hbase.client.Put;
 
 import java.util.List;
 
@@ -15,19 +15,17 @@ import java.util.List;
  */
 public interface DataStore<T> {
 
-    public void put(T object);
+    public Put put(T object);
 
-    public void put(List<T> objects);
+    public List<Put> put(List<T> objects);
 
-    public void put(Object key,T object);
-
-    public <K> void put(Function<T,K> rowKeyFunction, List<T> objects);
+    public Put put(Object key,T object);
 
     public <K> Optional<T> get(K key);
 
-    public void delete(Object key);
+    public Delete delete(Object key);
 
-    public void delete(List<?> keys);
+    public List<Delete> delete(List<?> keys);
 
     public List<T> get(IQuery<T> query);
 

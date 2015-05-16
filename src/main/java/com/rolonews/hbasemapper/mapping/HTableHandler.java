@@ -32,9 +32,10 @@ public class HTableHandler {
         try {
             if (!connection.isTableAvailable(tableName)) {
 
-                LOG.debug(String.format("%s table does not exit, so we creating it",tableName.toString()));
+                LOG.debug("{} table does not exit, so we creating it", tableName.getNameAsString());
                 HBaseAdmin admin = new HBaseAdmin(connection.getConfiguration());
                 admin.createTable(mapper.tableDescriptor());
+                admin.close();
             }
             HTableInterface table = connection.getTable(tableName);
             return table;
@@ -46,11 +47,6 @@ public class HTableHandler {
 
     public HTableInterface getOrCreateHTable(Class<?> clazz){
         EntityMapper<?> mapper = MappingRegistry.getMapping(clazz);
-
-        if(mapper==null){
-           mapper =  AnnotationEntityMapper.createAnnotationMapping(clazz);
-           MappingRegistry.register(mapper);
-        }
         return getOrCreateHTable(mapper);
     }
 

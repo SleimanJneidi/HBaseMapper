@@ -19,4 +19,17 @@ public abstract class DataStoreFactory {
         return new BasicDataStore<T>(connection,clazz,mapper);
     }
 
+
+    public static <T> AsyncDataStore<T> getAsyncDataStore(final Class<T> clazz,final HConnection connection){
+        BasicDataStore<T> dataStore = new BasicDataStore<T>(connection,clazz,null);
+        BasicAsyncDataStore<T> asyncDataStore = new BasicAsyncDataStore<T>(dataStore);
+        return asyncDataStore;
+    }
+
+    public static <T> AsyncDataStore<T> getAsyncDataStore(final Class<T> clazz,final HConnection connection,final EntityMapper<T> mapper){
+        BasicDataStore<T> dataStore = new BasicDataStore<T>(connection,clazz,mapper);
+        BasicAsyncDataStore<T> asyncDataStore = new BasicAsyncDataStore<T>(dataStore);
+        return asyncDataStore;
+    }
+
 }

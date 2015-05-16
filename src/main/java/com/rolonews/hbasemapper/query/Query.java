@@ -1,23 +1,27 @@
 package com.rolonews.hbasemapper.query;
 
+import java.util.Map;
+
+import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.filter.CompareFilter;
+import org.apache.hadoop.hbase.filter.Filter;
+import org.apache.hadoop.hbase.filter.FilterList;
+import org.apache.hadoop.hbase.filter.PageFilter;
+import org.apache.hadoop.hbase.filter.PrefixFilter;
+import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
+import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.hbase.util.Pair;
+
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.rolonews.hbasemapper.exceptions.ColumnNotMappedException;
-import com.rolonews.hbasemapper.mapping.CellDescriptor;
+import com.rolonews.hbasemapper.mapping.FieldDescriptor;
+import com.rolonews.hbasemapper.mapping.HCellDescriptor;
 import com.rolonews.hbasemapper.mapping.EntityMapper;
 import com.rolonews.hbasemapper.mapping.MappingRegistry;
-
-import org.apache.hadoop.hbase.client.Scan;
-import org.apache.hadoop.hbase.filter.*;
-import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.hbase.util.Pair;
-
-import static com.rolonews.hbasemapper.serialisation.SerializationFactory.*;
-
-import java.lang.reflect.Field;
-import java.util.Map;
+import com.rolonews.hbasemapper.serialisation.SerialisationManager;
 
 /**
  *
@@ -53,24 +57,26 @@ public class Query<T> implements IQuery<T>{
         private final Scan scanner;
         private final FilterList filterList;
         private final EntityMapper<T> typeInfo;
+        private SerialisationManager serialisationManager;
 
         protected Builder(Class<T> clazz) {
             this.clazz = clazz;
             this.scanner = new Scan();
             this.filterList = new FilterList();
-            this.typeInfo = MappingRegistry.registerIfAbsent(clazz);
+            this.typeInfo = MappingRegistry.getMapping(clazz);
+            this.serialisationManager = typeInfo.serializationManager();
 
         }
 
         public Builder<T> rowKeyPrefix(Object value) {
-            byte[] prefix = getSerializer(value).serialize(value);
+            byte[] prefix = serialisationManager.serialize(value);
             Filter filter = new PrefixFilter(prefix);
             filterList.addFilter(filter);
             return this;
         }
 
         public Builder<T> startRow(Object startRow) {
-            byte[] startRowBytes = getSerializer(startRow).serialize(startRow);
+            byte[] startRowBytes = serialisationManager.serialize(startRow);
             scanner.setStartRow(startRowBytes);
 
             return this;
@@ -79,26 +85,25 @@ public class Query<T> implements IQuery<T>{
         public Builder<T> limit(long limit){
             Filter filter = new PageFilter(limit);
             filterList.addFilter(filter);
-            scanner.setMaxResultSize(limit);
             return this;
         }
 
         public Builder<T> stopRow(Object stopRow) {
-            byte[] stopRowBytes = getSerializer(stopRow).serialize(stopRow);
+            byte[] stopRowBytes = serialisationManager.serialize(stopRow);
             scanner.setStopRow(stopRowBytes);
 
             return this;
         }
 
         public Builder<T> setCaching(int caching){
-            scanner.setCaching(caching);
-            return this;
+        	scanner.setCaching(caching);
+        	return this;
         }
         public Builder<T> equals(final String field, Object value) {
             Preconditions.checkNotNull(field);
             Preconditions.checkNotNull(value);
             Pair<byte[], byte[]> familyQualPair = getColumnByFieldName(field, this.typeInfo);
-            byte[] valueBytes = getSerializer(value).serialize(value);
+            byte[] valueBytes = serialisationManager.serialize(value);
             Filter filter = getComparisionFilter(familyQualPair, CompareFilter.CompareOp.EQUAL, valueBytes);
             this.filterList.addFilter(filter);
 
@@ -109,7 +114,7 @@ public class Query<T> implements IQuery<T>{
             Preconditions.checkNotNull(field);
             Preconditions.checkNotNull(value);
             Pair<byte[], byte[]> familyQualPair = getColumnByFieldName(field, this.typeInfo);
-            byte[] valueBytes = getSerializer(value).serialize(value);
+            byte[] valueBytes = serialisationManager.serialize(value);
             Filter filter = getComparisionFilter(familyQualPair, CompareFilter.CompareOp.NOT_EQUAL, valueBytes);
             this.filterList.addFilter(filter);
 
@@ -122,7 +127,7 @@ public class Query<T> implements IQuery<T>{
             Preconditions.checkNotNull(value);
 
             Pair<byte[], byte[]> familyQualPair = getColumnByFieldName(field, this.typeInfo);
-            byte[] valueBytes = getSerializer(value).serialize(value);
+            byte[] valueBytes = serialisationManager.serialize(value);
             Filter filter = getComparisionFilter(familyQualPair, CompareFilter.CompareOp.GREATER, valueBytes);
             this.filterList.addFilter(filter);
 
@@ -134,7 +139,7 @@ public class Query<T> implements IQuery<T>{
             Preconditions.checkNotNull(value);
 
             Pair<byte[], byte[]> familyQualPair = getColumnByFieldName(field, this.typeInfo);
-            byte[] valueBytes = getSerializer(value).serialize(value);
+            byte[] valueBytes = serialisationManager.serialize(value);
             Filter filter = getComparisionFilter(familyQualPair, CompareFilter.CompareOp.GREATER_OR_EQUAL, valueBytes);
             this.filterList.addFilter(filter);
 
@@ -146,7 +151,7 @@ public class Query<T> implements IQuery<T>{
             Preconditions.checkNotNull(value);
 
             Pair<byte[], byte[]> familyQualPair = getColumnByFieldName(field, this.typeInfo);
-            byte[] valueBytes = getSerializer(value).serialize(value);
+            byte[] valueBytes = serialisationManager.serialize(value);
             Filter filter = getComparisionFilter(familyQualPair, CompareFilter.CompareOp.LESS, valueBytes);
             this.filterList.addFilter(filter);
 
@@ -158,7 +163,7 @@ public class Query<T> implements IQuery<T>{
             Preconditions.checkNotNull(value);
 
             Pair<byte[], byte[]> familyQualPair = getColumnByFieldName(field, this.typeInfo);
-            byte[] valueBytes = getSerializer(value).serialize(value);
+            byte[] valueBytes = serialisationManager.serialize(value);
             Filter filter = getComparisionFilter(familyQualPair, CompareFilter.CompareOp.LESS_OR_EQUAL, valueBytes);
             this.filterList.addFilter(filter);
 
@@ -169,15 +174,14 @@ public class Query<T> implements IQuery<T>{
             if(this.filterList.getFilters().size()>0) {
                 this.scanner.setFilter(this.filterList);
             }
-
             return new Query<T>(this);
         }
 
         private Pair<byte[], byte[]> getColumnByFieldName(final String field, EntityMapper<?> typeInfo) {
 
-            Map<CellDescriptor, Field> columnFieldMap = Maps.filterKeys(typeInfo.columns(), new Predicate<CellDescriptor>() {
+            Map<HCellDescriptor, FieldDescriptor> columnFieldMap = Maps.filterKeys(typeInfo.columns(), new Predicate<HCellDescriptor>() {
                 @Override
-                public boolean apply(CellDescriptor column) {
+                public boolean apply(HCellDescriptor column) {
                     return column.qualifier().equals(field);
                 }
             });
@@ -185,7 +189,7 @@ public class Query<T> implements IQuery<T>{
             if (columnFieldMap.size() == 0) {
                 throw new ColumnNotMappedException("field of name " + field + "is not mapped, make sure you map your entity properly");
             }
-            CellDescriptor column = Iterables.getLast(columnFieldMap.keySet());
+            HCellDescriptor column = Iterables.getLast(columnFieldMap.keySet());
             return new Pair<byte[], byte[]>(Bytes.toBytes(column.family()), Bytes.toBytes(column.qualifier()));
         }
 

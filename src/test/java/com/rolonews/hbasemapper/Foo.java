@@ -1,26 +1,19 @@
 package com.rolonews.hbasemapper;
 
 import com.google.common.base.Function;
-import com.rolonews.hbasemapper.annotations.Column;
-import com.rolonews.hbasemapper.annotations.Table;
-
-import javax.annotation.Nullable;
 
 /**
  *
  * Created by Sleiman on 13/12/2014.
  */
-@Table(name = "FooTrial", columnFamilies = {"info"}, rowKeyGenerator = FooKeyGen.class)
 public class Foo{
 
     private int id;
-
-    @Column(family = "info",qualifier = "age")
+    
     private int age;
-    @Column(family = "info",qualifier = "name")
+    
     private String name;
 
-    @Column(family = "info", qualifier = "job")
     private String job;
 
 
