@@ -1,7 +1,8 @@
 # HBase Mapper
 ##Overview
-A simple object to HBase mapping library that simplifies the
-access to HBase. Mapping can be done fluently or using annotations.
+A simple object to HBase mapping API that simplifies the
+access to HBase. You map Java classes to HBase table using a
+simple and fluent API
 
 ##Examples
 
@@ -16,7 +17,7 @@ class Foo{
 ###Fluent Mapping
 
 ```
-   EntityMapper<Foo> mapper = FluentEntityMapper.builder(Foo.class, "tableName")
+EntityMapper<Foo> mapper = FluentEntityMapper.builder(Foo.class, "tableName")
         .withRowKeyGenerator(new Function<Foo, String>() {
             @Override
             public String apply(Foo input) {
@@ -47,4 +48,25 @@ IQuery<Foo> query =  Query.builder(Foo.class).startRow("prefix")
  List<Foo> results = dataStore.get(query);
 ```
 
+###Async Data stores
+HBaseMapper allows you to query HBase asynchronously using RxJava
+```
 
+AsyncDataStore<Foo> async=DataStoreFactory.getAsyncDataStore(Foo.class,connection);
+Observable<Foo> fooObservable = asyncDataStore.getAsync(query);
+fooObservable.subscribe(new Action1<Foo>() {
+            @Override
+            public void call(Foo foo) {
+                // do something useful with foo
+            }
+        });
+
+```
+With Java 8, This becomes less verbose and more flexible
+
+```
+fooObservable.filter(foo->foo.name().startsWith("HBase"))
+              .map(foo-> foo.name())
+              .subscribe(System.out::println)
+
+```
